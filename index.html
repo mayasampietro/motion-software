@@ -6,266 +6,319 @@
 <title>Motioner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Urbanist:wght@300;500;600;700&display=swap">
 <style>
-/* Layout: three working areas. Left = your design and words, middle = stage and timeline, right = the three ways to move the selected layer. */
+/* Layout, from the references: a dark sidebar of numbered layer tiles on the left, a soft light workspace on the right
+   with a giant layer-name headline, three solid-color option cards, and pill controls. */
 :root{
-  --bg:#EDF0EC; --surface:#F8FAF7; --inset:#E2E7E1; --ink:#18221E; --ink-2:#4B5953; --line:#CDD5CE;
-  --accent:#D81E6B; --accent-ink:#FFFFFF; --accent-soft:#F9D6E4; --ok:#1C8B5B; --warn:#9A5B00;
-  --stage-bg:#DDE3DC; --grid:#C3CBC4; --shadow:0 1px 2px rgba(24,34,30,.08),0 6px 20px rgba(24,34,30,.07);
-  --font-display:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --font-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --bg:#EEF0F5; --bg-2:#E1E4EC; --surface:#FFFFFF; --surface-2:#E6E9F0; --ink:#161616; --ink-2:#5B6072; --line:#D3D7E1;
+  --side:#2A2A2A; --tile:#111111; --tile-ink:#FFFFFF; --tile-muted:#9C9CA3;
+  --accent:#FF6B4A; --accent-ink:#161616;
+  --c-lilac:#D9C5F9; --c-coral:#FF6F4D; --c-green:#00A05B; --card-ink:#161616;
+  --ok:#0B7A47; --warn:#9A4A00;
+  --shadow:0 1px 2px rgba(22,22,22,.06),0 12px 32px rgba(22,28,45,.09);
+  --font-display:"Urbanist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#101714; --surface:#17211D; --inset:#0C120F; --ink:#E7EEE9; --ink-2:#9AAAA2; --line:#2B3832;
-    --accent:#FF5A9A; --accent-ink:#1B0610; --accent-soft:#3A1627; --ok:#4DD39A; --warn:#F0B35A;
-    --stage-bg:#0B100E; --grid:#1D2923; --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);
+    --bg:#181818; --bg-2:#101010; --surface:#242424; --surface-2:#2E2E2E; --ink:#F4F4F4; --ink-2:#A4A4AC; --line:#3A3A3E;
+    --side:#0E0E0E; --tile:#1C1C1C; --tile-muted:#8E8E96;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px rgba(0,0,0,.4);
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#101714; --surface:#17211D; --inset:#0C120F; --ink:#E7EEE9; --ink-2:#9AAAA2; --line:#2B3832;
-  --accent:#FF5A9A; --accent-ink:#1B0610; --accent-soft:#3A1627; --ok:#4DD39A; --warn:#F0B35A;
-  --stage-bg:#0B100E; --grid:#1D2923; --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);
+  --bg:#181818; --bg-2:#101010; --surface:#242424; --surface-2:#2E2E2E; --ink:#F4F4F4; --ink-2:#A4A4AC; --line:#3A3A3E;
+  --side:#0E0E0E; --tile:#1C1C1C; --tile-muted:#8E8E96;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px rgba(0,0,0,.4);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--font-body);padding-inline:16px;padding-block:0 32px}
-h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
-h2{font-size:17px;font-weight:700}
-h3{font-size:15px;font-weight:700}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.55 var(--font-body)}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+h2{font-size:22px;font-weight:600;letter-spacing:-.02em}
+h3{font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
 p{margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .num,.time{font-variant-numeric:tabular-nums}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 svg.i.solid{fill:currentColor;stroke:none}
+.hint{color:var(--ink-2);font-size:13px}
+.empty{padding:16px;border:1px dashed var(--line);border-radius:18px;color:var(--ink-2);font-size:13px}
 
-/* top bar */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  padding-block:12px;margin-inline:-16px;padding-inline:16px;background:var(--bg);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
-.brand h1{font-size:26px;font-weight:800;letter-spacing:-.03em}
-.brand span{color:var(--ink-2);font-size:13px}
-.bar{display:flex;gap:8px;align-items:center}
+/* shell */
+.shell{display:grid;grid-template-columns:minmax(0,1fr);min-height:100vh}
+@media (min-width:1000px){.shell{grid-template-columns:344px minmax(0,1fr);background:linear-gradient(to right,var(--side) 344px,transparent 344px)}}
 
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:500}
-.btn:hover:not(:disabled){border-color:var(--ink-2)}
+/* sidebar */
+.side{background:var(--side);color:#fff;padding:20px 16px 24px;display:flex;flex-direction:column;gap:18px;min-width:0}
+@media (min-width:1000px){.side{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:24px 20px}}
+.brand{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.03em;line-height:1}
+.brand i{font-style:normal;color:var(--accent)}
+.tagline{color:var(--tile-muted);font-size:12.5px;margin-top:6px}
+.file{background:#fff;color:#161616;border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.file.over{outline:3px solid var(--accent)}
+.file .row1{display:flex;justify-content:space-between;align-items:baseline}
+.file .lab{font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-.02em}
+.file .num{color:#6A6A72;font-family:var(--font-display)}
+.file .fn{font-weight:500;overflow-wrap:anywhere;font-size:13px}
+.file .hint{color:#5F5F68;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.side-h{display:flex;justify-content:space-between;align-items:baseline}
+.side-h h2{font-size:15px;font-weight:600;color:var(--tile-muted);letter-spacing:0}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:999px){.tiles{display:flex;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}.tile{flex:0 0 140px}}
+.tile{background:var(--tile);color:var(--tile-ink);border:0;border-radius:16px;padding:12px;min-height:116px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;min-width:0}
+.tile:hover{outline:1.5px solid rgba(255,255,255,.35)}
+.tile .top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.tile .glyph{width:26px;height:26px;stroke-width:1.6}
+.tile .num{font-family:var(--font-display);font-size:14px;color:var(--tile-muted);display:flex;gap:6px;align-items:center}
+.tile .num svg{width:13px;height:13px}
+.tile .nm{display:block;font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .st{display:block;font-size:12px;color:var(--tile-muted)}
+.tile.has .st{color:var(--accent)}
+.tile.sel{background:#fff;color:#161616}
+.tile.sel .num,.tile.sel .st{color:#66666E}
+.tile.sel.has .st{color:#C2410C}
+.tile.off{opacity:.5}
+.stagger{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--tile-muted)}
+.side input[type=number]{background:#1B1B1B;border-color:#3A3A3E;color:#fff}
+.side .btn{background:transparent;border-color:#4A4A50;color:#fff}
+.side .btn:hover:not(:disabled){border-color:#fff}
+.file .btn{color:#161616;border-color:#BDBDC6}
+.file .btn:hover:not(:disabled){border-color:#161616}
+
+/* controls shared */
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:7px 16px;border-radius:99px;border:1px solid var(--line);background:transparent;font-weight:500}
+.btn:hover:not(:disabled){border-color:var(--ink)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-.btn.primary:hover:not(:disabled){filter:brightness(1.06);border-color:var(--accent)}
-.btn.small{min-height:30px;padding:3px 10px;font-size:13px;border-radius:8px}
-.btn.quiet{background:transparent}
-.icon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:9px;border:1px solid transparent;background:transparent}
-.icon:hover{background:var(--inset)}
-.icon[aria-pressed="true"]{color:var(--accent)}
-
-/* page grid */
-.app{display:grid;gap:28px 24px;padding-block:20px;grid-template-columns:minmax(0,1fr);
-  grid-template-areas:"stage" "brief" "options"}
-.col{min-width:0;display:flex;flex-direction:column;gap:24px}
-.col-stage{grid-area:stage}.col-brief{grid-area:brief}.col-options{grid-area:options}
-@media (min-width:820px){
-  .app{grid-template-columns:minmax(0,300px) minmax(0,1fr);grid-template-areas:"stage stage" "brief options"}
-}
-@media (min-width:1180px){
-  .app{grid-template-columns:minmax(260px,300px) minmax(0,1fr) minmax(300px,370px);grid-template-areas:"brief stage options"}
-  .col-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));align-self:start}
-}
-.section{display:flex;flex-direction:column;gap:10px;min-width:0}
-.hint{color:var(--ink-2);font-size:13px}
-.empty{padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--ink-2);font-size:13px}
-
-/* brief */
-.drop{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px dashed var(--line);border-radius:12px;background:var(--surface)}
-.drop.over{border-color:var(--accent);background:var(--accent-soft)}
-.drop .file{font-weight:600;overflow-wrap:anywhere}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-textarea{width:100%;min-height:84px;resize:vertical;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;font-size:12.5px;color:var(--ink-2)}
-.chip:hover{border-color:var(--accent);color:var(--ink)}
-.ask{padding:12px;border-radius:12px;background:var(--accent-soft);display:flex;flex-direction:column;gap:8px}
-.ask b{font-weight:600}
-
-/* layers */
-.layers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.layer{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:4px 6px;border-radius:10px;border:1px solid transparent}
-.layer.sel{background:var(--surface);border-color:var(--accent)}
-.layer .name{background:none;border:0;text-align:left;padding:4px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.layer.off .name{color:var(--ink-2);text-decoration:line-through;text-decoration-color:var(--line)}
-.badge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--inset);color:var(--ink-2);white-space:nowrap}
-.badge.on{background:var(--accent-soft);color:var(--ink)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.05);border-color:var(--accent)}
+.btn.small{min-height:32px;padding:3px 12px;font-size:13px}
+input[type=number],select{min-height:34px;padding:3px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+input[type=number]{width:76px}
 input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
-.stagger{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
-input[type=number],select{min-height:32px;padding:3px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
-input[type=number]{width:74px}
+input[type=range]{width:100%;accent-color:var(--accent)}
 
-/* stage */
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.seg button{border:0;background:transparent;padding:6px 12px;min-height:34px}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:600}
-.stage-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.stage-tools .time{margin-left:auto;color:var(--ink-2)}
-.stage{position:relative;border-radius:16px;overflow:hidden;background-color:var(--stage-bg);
-  background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:16px 16px;display:grid;place-items:center;padding:16px;min-height:200px}
-.canvas{position:relative;width:min(100%,560px,calc(56vh * var(--ar,1)));box-shadow:var(--shadow)}
+/* workspace */
+.main{min-width:0;padding:20px 16px 48px;background:linear-gradient(180deg,var(--bg-2),var(--bg) 360px);display:flex;flex-direction:column;gap:26px}
+@media (min-width:700px){.main{padding:24px 32px 56px}}
+.topnav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pillnav{display:inline-flex;gap:2px;padding:4px;border-radius:99px;background:var(--surface-2);align-items:center}
+.pillnav button{border:0;background:transparent;padding:8px 18px;border-radius:99px;min-height:36px;display:inline-flex;gap:8px;align-items:center}
+.pillnav button[aria-pressed="true"]{background:var(--surface);box-shadow:var(--shadow);font-weight:500}
+.pillnav button:disabled{opacity:.4;cursor:default}
+.pillnav button.go{background:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.hero{display:flex;flex-direction:column;gap:14px;min-width:0}
+.hero h1{font-size:clamp(44px,8.2vw,112px);font-weight:600;letter-spacing:-.045em;line-height:.92;text-transform:uppercase;overflow-wrap:anywhere}
+.hero-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pillbadge{border:1px solid var(--line);border-radius:99px;padding:5px 16px;font-size:13px;background:var(--surface-2)}
+.pillbtn{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:5px 14px;min-height:34px;background:transparent;font-size:13px;cursor:pointer}
+.pillbtn:hover{border-color:var(--ink)}
+.pillbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.hero p.sub{max-width:62ch;color:var(--ink-2)}
+
+.briefbox{display:flex;flex-direction:column;gap:12px}
+.briefrow{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
+textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border-radius:22px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+.briefrow .btn{align-self:center;min-height:46px;padding-inline:24px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:5px 14px;border-radius:99px;border:1px solid var(--line);background:transparent;font-size:12.5px;color:var(--ink-2)}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.ask{padding:16px 18px;border-radius:20px;background:var(--c-lilac);color:#161616;display:flex;flex-direction:column;gap:10px}
+.ask .btn{border-color:#161616;color:#161616}
+.ask .btn:hover{background:#161616;color:#fff}
+
+.work{display:grid;gap:20px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media (min-width:1180px){.work{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:20px;min-width:0}
+.stagecard{border-radius:26px;background:var(--surface);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.stage-tools{display:flex;gap:12px;align-items:center}
+.stage-tools .time{color:var(--ink-2)}
+.ring{position:relative;width:48px;height:48px;border-radius:50%;border:0;background:transparent;padding:0;display:grid;place-items:center;color:var(--ink)}
+.ring svg.rs{position:absolute;inset:0;width:100%;height:100%}
+.ring .rt{fill:none;stroke:var(--surface-2);stroke-width:4}
+.ring .rp{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-dasharray:125.66;stroke-dashoffset:125.66}
+.ring .ringicon{display:grid;place-items:center;position:relative}
+.stage{position:relative;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,var(--surface-2),var(--bg));display:grid;place-items:center;padding:18px;min-height:200px}
+.canvas{position:relative;width:min(100%,560px,calc(56vh * var(--ar,1)));box-shadow:0 14px 40px rgba(22,28,45,.2);border-radius:6px;overflow:hidden}
 .canvas svg{display:block;width:100%;height:100%}
 .selbox{position:absolute;pointer-events:none;border:2px dashed var(--accent);border-radius:4px;display:none}
 .mw{transform-box:fill-box;transform-origin:center;cursor:pointer}
 .stage.orig .mw{cursor:default}
 
-/* timeline */
-.timeline{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 10px;position:relative;touch-action:pan-y}
+.timeline{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:12px 16px;position:relative;touch-action:pan-y}
 .tl-body{position:relative}
-.trow{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:center;min-height:28px;gap:8px}
+.trow{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;min-height:28px;gap:8px}
 .trow .tname{background:none;border:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;padding:2px 0;color:var(--ink-2)}
 .trow.sel .tname{color:var(--ink);font-weight:600}
-.track{position:relative;height:22px;border-radius:6px;background:var(--inset)}
+.track{position:relative;height:20px;border-radius:99px;background:var(--surface-2)}
 .ruler .track{background:none;height:18px}
 .tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);font-size:10.5px;color:var(--ink-2);padding-left:3px}
-.bar-m{position:absolute;top:3px;bottom:3px;border-radius:5px;background:var(--accent);cursor:grab;min-width:6px;touch-action:none}
-.bar-m.loop{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.28) 0 6px,transparent 6px 12px)}
+.bar-m{position:absolute;top:2px;bottom:2px;border-radius:99px;background:var(--accent);cursor:grab;min-width:8px;touch-action:none}
+.bar-m.loop{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.35) 0 6px,transparent 6px 12px)}
 .bar-m:active{cursor:grabbing}
-.playhead-wrap{position:absolute;top:0;bottom:0;left:112px;right:0;pointer-events:none}
+.playhead-wrap{position:absolute;top:0;bottom:0;left:104px;right:0;pointer-events:none}
 .playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);transform:translateX(-1px)}
 
-/* panels */
-.panel{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
-.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px 14px}
+.panel{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:22px;background:var(--surface);box-shadow:var(--shadow);min-width:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px 16px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field label,.field .lab{font-size:12.5px;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
 .field output{color:var(--ink)}
-input[type=range]{width:100%;accent-color:var(--accent)}
 .bez{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .bez input{width:100%}
 
-/* option windows */
-.options{display:flex;flex-direction:column;gap:14px}
-.opt{display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
-.opt.used{border-color:var(--accent)}
-.opt .view{background-color:var(--stage-bg);background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:14px 14px;padding:10px;display:grid;place-items:center}
-.opt .view .mini{width:min(100%,240px,calc(170px * var(--ar,1)));aspect-ratio:var(--ar,1);box-shadow:var(--shadow)}
-.opt .view svg{display:block;width:100%;height:100%}
-.opt .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
-.opt .head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.tag{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--accent-soft)}
-.opt .acts{display:flex;gap:8px;flex-wrap:wrap}
+/* option cards: solid color, preview on top, label bottom-left, outlined square button bottom-right */
+.opts-wrap{display:flex;flex-direction:column;gap:14px}
+.options{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.opt{border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:12px;color:var(--card-ink);min-width:0;position:relative}
+.opt.c0{background:var(--c-lilac)}.opt.c1{background:var(--c-coral)}.opt.c2{background:var(--c-green)}
+.opt.used{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
+.opt .chips2{display:flex;gap:6px;flex-wrap:wrap;min-height:26px}
+.opt .tagw{background:#fff;color:#161616;border-radius:8px;padding:2px 10px;font-size:12px;font-weight:500}
+.opt .view{display:grid;place-items:center;min-height:170px;flex:1}
+.opt .mini{width:min(100%,230px,calc(170px * var(--ar,1)));aspect-ratio:var(--ar,1);border-radius:10px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.opt .mini svg{display:block;width:100%;height:100%}
+.opt .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.opt .foot span{display:block;font-size:13px;opacity:.72}
+.opt .desc{font-size:13px;line-height:1.45}
+.sq{width:44px;height:44px;border-radius:11px;border:1.5px solid #161616;background:transparent;color:#161616;display:grid;place-items:center;flex:none}
+.sq:hover:not(:disabled),.opt.used .sq{background:#161616;color:#fff}
+.sq:disabled{opacity:.4;cursor:default}
+.opt .acts{display:flex;gap:14px;flex-wrap:wrap}
+.lnk{background:none;border:0;padding:2px 0;text-decoration:underline;text-underline-offset:3px;font-size:13px;color:inherit}
 
 /* log */
-.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;max-height:320px;overflow:auto}
-.log li{display:flex;flex-direction:column;gap:1px;padding-left:10px;border-left:2px solid var(--line);font-size:13px}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;max-height:340px;overflow:auto}
+.log li{display:flex;flex-direction:column;gap:1px;padding-left:12px;border-left:2px solid var(--line);font-size:13px}
 .log li.you{border-left-color:var(--accent)}
 .log .meta{font-size:12px;color:var(--ink-2)}
+.lower{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1180px){.lower{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}}
 
 /* export dialog */
-.overlay{position:fixed;inset:0;z-index:50;background:rgba(10,16,13,.55);display:grid;place-items:center;padding:16px}
-.dialog{width:min(720px,100%);max-height:calc(100% - 8px);overflow:auto;background:var(--surface);border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:14px}
-.fmt{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;border:1px solid var(--line)}
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(10,10,12,.6);display:grid;place-items:center;padding:16px}
+.dialog{width:min(720px,100%);max-height:calc(100% - 8px);overflow:auto;background:var(--bg);border-radius:26px;box-shadow:var(--shadow);padding:22px;display:flex;flex-direction:column;gap:14px}
+.dialog .options{grid-template-columns:minmax(0,1fr)}
+.fmt{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
 .fmt .top2{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.fmt .top2 b{font-family:var(--font-display);font-size:15px}
-.pill{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--inset);color:var(--ink-2)}
-.pill.edit{background:var(--accent-soft);color:var(--ink)}
-.pill.warn{color:var(--warn)}
+.fmt .top2 b{font-family:var(--font-display);font-size:19px;font-weight:600}
+.pill{font-size:11.5px;padding:2px 10px;border-radius:99px;background:var(--surface-2);color:var(--ink-2)}
+.pill.edit{background:var(--c-lilac);color:#161616}
+.pill.warn{background:var(--c-coral);color:#161616}
 .checks{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--ink-2)}
 .checks .ok{color:var(--ok)}.checks .bad{color:var(--warn)}
-.exp-preview{display:flex;justify-content:center;padding:12px;background:var(--stage-bg);border-radius:12px}
+.exp-preview{display:flex;justify-content:center;padding:14px;background:var(--surface-2);border-radius:18px}
 .exp-preview img,.exp-preview video{max-width:100%;max-height:260px}
 .note{font-size:12.5px;color:var(--ink-2)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="brand"><h1>Motioner</h1><span>Give your still designs motion</span></div>
-  <div class="bar">
-    <button class="btn" id="undo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo</button>
-    <button class="btn" id="redo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>Redo</button>
-    <button class="btn primary" id="export-open" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v10m-4-4 4 4 4-4M5 19h14"/></svg>Export</button>
-  </div>
-</header>
+<div class="shell">
+  <aside class="side">
+    <div>
+      <div class="brand">motioner<i>.</i></div>
+      <div class="tagline">Give your still designs motion</div>
+    </div>
+    <div class="file" id="drop">
+      <div class="row1"><span class="lab">Your design</span><span class="num">00</span></div>
+      <div class="fn" id="file-name">No design yet</div>
+      <p class="hint" id="file-note">Drop an SVG here or choose one. Illustrator, Photoshop and Figma files: export as SVG first.</p>
+      <div class="row">
+        <button class="btn small" id="pick" type="button">Choose file</button>
+        <button class="btn small" id="sample" type="button">Use the example</button>
+      </div>
+      <input type="file" id="file" accept=".svg,.json,image/svg+xml,application/json" hidden>
+    </div>
+    <div class="side-h"><h2>Layers</h2><span class="hint" style="color:var(--tile-muted)">Pick one to move it</span></div>
+    <div class="tiles" id="layers"></div>
+    <div class="stagger">
+      <label for="stag">Stagger</label><input type="number" id="stag" min="0" max="1" step="0.05" value="0"><span>s apart</span>
+      <button class="btn small" id="stag-apply" type="button">Apply to motions</button>
+    </div>
+  </aside>
 
-<div class="app">
-  <!-- stage + timeline -->
-  <div class="col col-stage">
-    <div class="stage-tools">
-      <div class="seg" role="group" aria-label="View">
+  <main class="main">
+    <header class="topnav">
+      <div class="pillnav" role="group" aria-label="View">
         <button type="button" id="mode-anim" aria-pressed="true">Animated</button>
         <button type="button" id="mode-orig" aria-pressed="false">Original</button>
       </div>
-      <button class="icon" id="play" type="button" aria-label="Pause" title="Play or pause (space)"></button>
-      <span class="time" id="time">0.00 / 3.00 s</span>
-    </div>
-    <div class="stage" id="stage"><div class="canvas" id="canvas"><div class="selbox" id="selbox"></div></div></div>
-    <div class="timeline" id="timeline" aria-label="Timeline"></div>
-    <div class="panel">
-      <div class="fields">
-        <div class="field"><label for="doc-dur">Length (seconds)</label><input type="number" id="doc-dur" min="0.5" max="30" step="0.5"></div>
-        <div class="field"><label for="doc-fps">Frames per second</label><select id="doc-fps"><option>24</option><option>30</option><option>60</option></select></div>
-        <div class="field"><label>&nbsp;</label><button class="btn small" id="fit" type="button">Fit length to motions</button></div>
+      <div class="pillnav">
+        <button id="undo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo</button>
+        <button id="redo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>Redo</button>
+        <button class="go" id="export-open" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v10m-4-4 4 4 4-4M5 19h14"/></svg>Export</button>
       </div>
-      <div class="fields">
-        <div class="field"><label for="post-sat">Saturation <output id="o-sat"></output></label><input type="range" id="post-sat" min="0" max="200"></div>
-        <div class="field"><label for="post-con">Contrast <output id="o-con"></output></label><input type="range" id="post-con" min="50" max="150"></div>
-        <div class="field"><label for="post-bri">Brightness <output id="o-bri"></output></label><input type="range" id="post-bri" min="50" max="150"></div>
-      </div>
-      <p class="hint">Color changes show in the preview, the animated SVG and the video. Lottie and After Effects files keep your original colors.</p>
-    </div>
-  </div>
+    </header>
 
-  <!-- brief + layers -->
-  <div class="col col-brief">
-    <section class="section">
-      <h2>Your design</h2>
-      <div class="drop" id="drop">
-        <div class="file" id="file-name">No design yet</div>
-        <p class="hint" id="file-note">Drop an SVG here or choose one. Illustrator, Photoshop and Figma files: export as SVG first.</p>
-        <div class="row">
-          <button class="btn small" id="pick" type="button">Choose file</button>
-          <button class="btn small quiet" id="sample" type="button">Use the example</button>
-        </div>
-        <input type="file" id="file" accept=".svg,.json,image/svg+xml,application/json" hidden>
+    <section class="hero">
+      <h1 id="hero-title">Your design</h1>
+      <div class="hero-row">
+        <span class="pillbadge" id="hero-badge">No motion yet</span>
+        <label class="pillbtn" for="hero-animate"><input type="checkbox" id="hero-animate"> Let it move</label>
+        <button class="pillbtn" id="hero-lock" type="button" aria-pressed="false"></button>
       </div>
+      <p class="sub" id="hero-sub"></p>
     </section>
-    <section class="section">
-      <h2>Describe the motion</h2>
+
+    <section class="briefbox">
       <label class="sr-only" for="brief">Describe how things should move</label>
-      <textarea id="brief" placeholder="For example: the steam floats up slowly and loops"></textarea>
+      <div class="briefrow">
+        <textarea id="brief" placeholder="Describe the motion, for example: the steam floats up slowly and loops"></textarea>
+        <button class="btn primary" id="suggest" type="button">Suggest motion</button>
+      </div>
       <div class="chips" id="chips"></div>
-      <div><button class="btn primary" id="suggest" type="button">Suggest motion</button></div>
       <div id="ask"></div>
     </section>
-    <section class="section">
-      <h2>Layers</h2>
-      <p class="hint">Tick a layer to let it move. Lock a layer to keep its motion as it is.</p>
-      <ul class="layers" id="layers"></ul>
-      <div class="stagger">
-        <label for="stag">Stagger</label><input type="number" id="stag" min="0" max="1" step="0.05" value="0"><span>s apart</span>
-        <button class="btn small" id="stag-apply" type="button">Apply to motions</button>
+
+    <section class="work">
+      <div class="stagecard">
+        <div class="stage-tools">
+          <button class="ring" id="play" type="button" aria-label="Pause" title="Play or pause (space)">
+            <svg class="rs" viewBox="0 0 48 48"><circle class="rt" cx="24" cy="24" r="20"/><circle class="rp" id="ringp" cx="24" cy="24" r="20" transform="rotate(-90 24 24)"/></svg>
+            <span class="ringicon"></span>
+          </button>
+          <span class="time" id="time">0.00 / 3.00 s</span>
+        </div>
+        <div class="stage" id="stage"><div class="canvas" id="canvas"><div class="selbox" id="selbox"></div></div></div>
+      </div>
+      <div class="stack">
+        <div class="timeline" id="timeline" aria-label="Timeline"></div>
+        <div class="panel">
+          <h2>Length and color</h2>
+          <div class="fields">
+            <div class="field"><label for="doc-dur">Length (seconds)</label><input type="number" id="doc-dur" min="0.5" max="30" step="0.5"></div>
+            <div class="field"><label for="doc-fps">Frames per second</label><select id="doc-fps"><option>24</option><option>30</option><option>60</option></select></div>
+            <div class="field"><label>&nbsp;</label><button class="btn small" id="fit" type="button">Fit length to motions</button></div>
+          </div>
+          <div class="fields">
+            <div class="field"><label for="post-sat">Saturation <output id="o-sat"></output></label><input type="range" id="post-sat" min="0" max="200"></div>
+            <div class="field"><label for="post-con">Contrast <output id="o-con"></output></label><input type="range" id="post-con" min="50" max="150"></div>
+            <div class="field"><label for="post-bri">Brightness <output id="o-bri"></output></label><input type="range" id="post-bri" min="50" max="150"></div>
+          </div>
+          <p class="hint">Color changes show in the preview, the animated SVG and the video. Lottie and After Effects files keep your original colors.</p>
+        </div>
       </div>
     </section>
-  </div>
 
-  <!-- options + controls + log -->
-  <div class="col col-options">
-    <section class="section">
+    <section class="opts-wrap">
       <h2 id="opt-title">Ways to move</h2>
       <div class="options" id="options"></div>
     </section>
-    <section class="section">
-      <h2>Fine-tune</h2>
-      <div id="controls"></div>
+
+    <section class="lower">
+      <div class="opts-wrap"><h2>Fine-tune</h2><div id="controls"></div></div>
+      <div class="opts-wrap"><h2>Decisions</h2><div class="panel"><ol class="log" id="log"></ol></div></div>
     </section>
-    <section class="section">
-      <h2>Decisions</h2>
-      <ol class="log" id="log"></ol>
-    </section>
-  </div>
+  </main>
 </div>
 
 <div class="overlay" id="export" hidden role="dialog" aria-modal="true" aria-labelledby="exp-title">
@@ -725,17 +778,28 @@ function renderTop() {
   $('#redo').title = state.redo.length ? 'Redo: ' + state.redo[state.redo.length - 1].label : '';
   $('#file-name').textContent = state.fileName ? state.fileName + (state.isExample ? ' (example design)' : '') : 'No design yet';
 }
+const GLYPH = {
+  circle: '<circle cx="12" cy="12" r="8"/>', ellipse: '<ellipse cx="12" cy="12" rx="9" ry="6"/>', rect: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+  path: '<path d="M3 16c4-10 8 4 12-6 2-5 4-3 6-2"/>', polygon: '<path d="M12 4 21 20H3z"/>', polyline: '<path d="M3 17 9 9l5 6 7-9"/>', line: '<path d="M4 18 20 6"/>',
+  g: '<rect x="3" y="7" width="12" height="12" rx="3"/><rect x="9" y="3" width="12" height="12" rx="3"/>', text: '<path d="M5 6h14M12 6v13"/>',
+  image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m4 18 6-5 4 3 3-2 3 3"/>'
+};
 function renderLayers() {
-  $('#layers').innerHTML = state.layers.map(l => {
-    const m = state.motions[l.key];
-    const badge = !l.animate ? 'still' : m ? m.typeLabel : 'no motion';
-    return `<li class="layer ${l.key === state.sel ? 'sel' : ''} ${l.animate ? '' : 'off'}" data-key="${l.key}">
-      <input type="checkbox" ${l.animate ? 'checked' : ''} data-act="animate" aria-label="Animate ${esc(l.name)}">
-      <button class="name" type="button" data-act="select" title="${esc(l.name)}">${esc(l.name)}</button>
-      <span class="badge ${m && l.animate ? 'on' : ''}">${esc(badge)}</span>
-      <button class="icon" type="button" data-act="lock" aria-pressed="${l.locked}" aria-label="${l.locked ? 'Unlock' : 'Lock'} ${esc(l.name)}">${l.locked ? ICON.lock : ICON.unlock}</button>
-    </li>`;
-  }).join('') || '<li class="empty">Load a design to see its layers.</li>';
+  $('#layers').innerHTML = state.layers.map((l, i) => {
+    const m = state.motions[l.key], sel = l.key === state.sel;
+    const status = !l.animate ? 'Still' : m ? m.typeLabel : 'No motion';
+    return `<button class="tile ${sel ? 'sel' : ''} ${l.animate ? '' : 'off'} ${m && l.animate ? 'has' : ''}" type="button" data-key="${l.key}" aria-pressed="${sel}" title="${esc(l.name)}">
+      <span class="top"><svg class="i glyph" viewBox="0 0 24 24">${GLYPH[l.tag] || GLYPH.g}</svg><span class="num">${l.locked ? ICON.lock : ''}${String(i + 1).padStart(2, '0')}</span></span>
+      <span><span class="nm">${esc(l.name)}</span><span class="st">${esc(status)}</span></span></button>`;
+  }).join('') || '<div class="empty">Load a design to see its layers.</div>';
+}
+function renderHero() {
+  const l = layerByKey(state.sel), m = l && state.motions[l.key];
+  $('#hero-title').textContent = l ? l.name : 'Your design';
+  $('#hero-badge').textContent = !l ? 'No design yet' : !l.animate ? 'Still' : m ? `${m.typeLabel} · ${m.source === 'suggestion' ? m.label : 'edited'}` : 'No motion yet';
+  $('#hero-sub').textContent = !l ? 'Open an SVG to start.' : !l.animate ? 'This layer stays still. Switch on "Let it move" to animate it.' : m ? describe(m) : 'Describe the motion below and press Suggest motion. You will get three ways to move this layer, and nothing changes until you choose one.';
+  const a = $('#hero-animate'); a.checked = !!(l && l.animate); a.disabled = !l;
+  const k = $('#hero-lock'); k.setAttribute('aria-pressed', !!(l && l.locked)); k.innerHTML = (l && l.locked ? ICON.lock : ICON.unlock) + (l && l.locked ? 'Locked' : 'Lock'); k.disabled = !l;
 }
 function renderAsk() {
   const q = state.question, host = $('#ask');
@@ -755,16 +819,14 @@ function renderOptions() {
   const others = Object.keys(state.suggestions).filter(k => state.suggestions[k].length && layerByKey(k).animate && !layerByKey(k).locked);
   host.innerHTML = list.map((s, i) => {
     const cur = state.motions[l.key], used = cur && cur.source === 'suggestion' && cur.label === s.label && cur.type === s.type;
-    return `<article class="opt ${used ? 'used' : ''}" data-i="${i}">
+    return `<article class="opt c${i % 3} ${used ? 'used' : ''}" data-i="${i}">
+      <div class="chips2">${s.recommended ? '<span class="tagw">Matches your words</span>' : ''}${used ? '<span class="tagw">In use</span>' : ''}</div>
       <div class="view"><div class="mini" style="--ar:${state.doc.w / state.doc.h}"></div></div>
-      <div class="body">
-        <div class="head"><h3>${esc(s.label)}</h3><span class="hint">${esc(s.typeLabel)}</span>${s.recommended ? '<span class="tag">Matches your words</span>' : ''}${used ? '<span class="tag">In use</span>' : ''}</div>
-        <p>${esc(describe(s))}</p>
-        <div class="acts">
-          <button class="btn primary small" type="button" data-act="use" ${l.locked ? 'disabled' : ''}>${used ? 'Use again' : 'Use this'}</button>
-          ${others.length > 1 ? `<button class="btn small" type="button" data-act="use-all">Use on ${others.length} layers</button>` : ''}
-          <button class="btn small quiet" type="button" data-act="skip">Skip</button>
-        </div></div></article>`;
+      <div class="foot"><div><h3>${esc(s.label)}</h3><span>${esc(s.typeLabel)}</span></div>
+        <button class="sq" type="button" data-act="use" aria-label="Use ${esc(s.label)}" title="Use this" ${l.locked ? 'disabled' : ''}>${used ? ICON.check : '<svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>'}</button></div>
+      <p class="desc">${esc(describe(s))}</p>
+      <div class="acts">${others.length > 1 ? `<button class="lnk" type="button" data-act="use-all">Use on ${others.length} layers</button>` : ''}<button class="lnk" type="button" data-act="skip">Skip</button></div>
+    </article>`;
   }).join('');
   $$('.opt', host).forEach(card => {
     const i = +card.dataset.i, d = buildDom(), host2 = $('.mini', card);
@@ -817,7 +879,7 @@ function renderDocPost() {
   applyPost();
 }
 function renderPlay() {
-  const b = $('#play'); b.innerHTML = state.playing ? ICON.pause : ICON.play; b.setAttribute('aria-label', state.playing ? 'Pause' : 'Play');
+  const b = $('#play'); $('.ringicon', b).innerHTML = state.playing ? ICON.pause : ICON.play; b.setAttribute('aria-label', state.playing ? 'Pause' : 'Play');
   $('#mode-anim').setAttribute('aria-pressed', state.mode === 'animated'); $('#mode-orig').setAttribute('aria-pressed', state.mode !== 'animated');
 }
 function renderTimeline() {
@@ -835,7 +897,7 @@ function renderTimeline() {
   host.innerHTML = `<div class="tl-body"><div class="trow ruler"><span></span><div class="track">${ticks}</div></div>${rows}<div class="playhead-wrap"><div class="playhead" id="playhead"></div></div></div>`;
 }
 function refreshAll() {
-  renderTop(); renderLayers(); renderAsk(); renderOptions(); renderControls(); renderTimeline(); renderDocPost(); renderLog(); renderPlay();
+  renderTop(); renderLayers(); renderHero(); renderAsk(); renderOptions(); renderControls(); renderTimeline(); renderDocPost(); renderLog(); renderPlay();
 }
 
 /* ---------- playback ---------- */
@@ -845,6 +907,7 @@ function renderFrame() {
   if (stage.map) state.layers.forEach(l => applyTo(stage.map[l.key], activeMotion(l.key) ? sampleMotion(compile(activeMotion(l.key)), t) : null));
   previews.forEach(p => applyTo(p.map[p.key], sampleMotion(compile(p.motion), t)));
   $('#time').textContent = `${t.toFixed(2)} / ${state.doc.duration.toFixed(2)} s`;
+  const rp = $('#ringp'); if (rp) rp.style.strokeDashoffset = 125.66 * (1 - t / state.doc.duration);
   const ph = $('#playhead'); if (ph) ph.style.left = (t / state.doc.duration * 100) + '%';
   const sb = $('#selbox'), w = stage.map && stage.map[state.sel];
   if (w && state.mode === 'animated') {
@@ -862,7 +925,7 @@ function tick(now) {
    Events and start-up
    ========================================================= */
 function select(key) {
-  state.sel = key; renderLayers(); renderOptions(); renderControls(); renderTimeline();
+  state.sel = key; renderLayers(); renderHero(); renderOptions(); renderControls(); renderTimeline();
 }
 function startDesign(text, name, opts = {}) {
   loadDesign(text, name, opts);
@@ -908,11 +971,9 @@ function wire() {
   $('#suggest').onclick = () => runBrief();
   $('#ask').onclick = e => { const b = e.target.closest('[data-type]'); if (b) runBrief(b.dataset.type); };
   // layers
-  $('#layers').addEventListener('click', e => {
-    const li = e.target.closest('.layer'); if (!li) return; const act = e.target.closest('[data-act]')?.dataset.act;
-    if (act === 'select') select(li.dataset.key); else if (act === 'lock') toggleLayer(li.dataset.key, 'locked');
-  });
-  $('#layers').addEventListener('change', e => { const li = e.target.closest('.layer'); if (li && e.target.dataset.act === 'animate') toggleLayer(li.dataset.key, 'animate'); });
+  $('#layers').addEventListener('click', ev => { const t = ev.target.closest('.tile'); if (t) select(t.dataset.key); });
+  $('#hero-animate').onchange = () => { if (state.sel) toggleLayer(state.sel, 'animate'); };
+  $('#hero-lock').onclick = () => { if (state.sel) toggleLayer(state.sel, 'locked'); };
   $('#stag').onchange = e => { state.stagger = clamp(+e.target.value || 0, 0, 1); e.target.value = state.stagger; };
   $('#stag-apply').onclick = applyStagger;
   // stage

@@ -19,7 +19,7 @@ Controls: ?
 Out: a series of windows with different options and approaches to give motion to your design
 
 The edges:
-Looks like: (folder)
+Looks like: the images in the `references/` folder (soft light workspace, dark sidebar of numbered layer tiles, giant uppercase headline, solid lilac / coral / green cards, pill controls)
 Never: never change the original design, never create something that is not changeable, never make decisions or you without letting you know, don’t make it a traditional animation software (keyframes….) it should be easier more immediate and more fun
 Done when:  you know it works because it creates a (always changeable) file with the motions you decided and edited and you can download it and open it on an animation software and everything works
 
@@ -90,7 +90,7 @@ Rules
 * Name things clearly. Layers keep their original names so they're recognizable in other software.
 
 The edges:
-Looks like: (folder)
+Looks like: the images in the `references/` folder (soft light workspace, dark sidebar of numbered layer tiles, giant uppercase headline, solid lilac / coral / green cards, pill controls)
 Never: never change the original design, never create something that is not changeable, never make decisions or you without letting you know, don’t make it a traditional animation software (keyframes….) it should be easier more immediate and more fun
 Done when:  you know it works because it creates a (always changeable) file with the motions you decided and edited and you can download it and open it on an animation software and everything works
 
