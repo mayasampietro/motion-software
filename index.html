@@ -1400,9 +1400,22 @@ function checkProject(text) {
 
 /* ---------- export dialog ---------- */
 let files = {};
-function download(name, mime, data) {
+function anchorDownload(name, mime, data) {
   const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: mime }));
   const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+/* Inside the Claude chat the page asks the viewer to save. Everywhere else it is a normal browser download. */
+async function download(name, mime, data) {
+  let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+  if (!dl) { anchorDownload(name, mime, data); return 'Downloaded'; }
+  try { await dl.save({ filename: name, data }); return 'Saved'; }
+  catch (err) {
+    if (err && err.code === 'declined') return 'Not saved';
+    if (err && err.code === 'rejected_extension') {
+      try { await dl.save({ filename: name + '.txt', data }); return 'Saved as .txt. Rename it to ' + name; } catch (e2) { return 'Not saved'; }
+    }
+    return 'Could not save';
+  }
 }
 async function copyText(text, btn) {
   let ok = false; try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
@@ -1446,7 +1459,7 @@ function wireExport() {
   $('#formats').addEventListener('click', async e => {
     const btn = e.target.closest('[data-act]'), row = e.target.closest('.fmt'); if (!btn || !row) return;
     const id = row.dataset.id, f = files[id], act = btn.dataset.act, pv = $('#exp-preview');
-    if (act === 'dl') download(f.file, f.mime, f.blob || f.text);
+    if (act === 'dl') { const old = btn.innerHTML; const r = await download(f.file, f.mime, f.blob || f.text); btn.textContent = r; setTimeout(() => { btn.innerHTML = old; }, 2600); }
     else if (act === 'copy') copyText(f.text, btn);
     else if (act === 'view' && id === 'svg') {
       const url = URL.createObjectURL(new Blob([f.text], { type: 'image/svg+xml' }));
