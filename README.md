@@ -93,3 +93,15 @@ The edges:
 Looks like: (folder)
 Never: never change the original design, never create something that is not changeable, never make decisions or you without letting you know, don’t make it a traditional animation software (keyframes….) it should be easier more immediate and more fun
 Done when:  you know it works because it creates a (always changeable) file with the motions you decided and edited and you can download it and open it on an animation software and everything works
+
+---
+
+## The app
+
+`index.html` is the whole app in one file. Open it in a browser to use it. It is also published as a live preview in the Claude chat, and both are kept in step: when the preview changes, `index.html` is updated and pushed here.
+
+What it does today:
+- Opens an SVG (Illustrator, Photoshop and Figma files: export as SVG first).
+- Reads your description and offers 3 approaches per layer. Nothing is applied until you accept it.
+- Fine-tune controls, timeline with draggable delays, undo and redo, and a decision log (what changed, why, who decided).
+- Exports: Lottie JSON, After Effects script (.jsx), animated SVG, a `.motioner.json` project file you can reopen, and a preview video (WebM, not editable). Each file is checked before download.

@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Motioner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: three working areas. Left = your design and words, middle = stage and timeline, right = the three ways to move the selected layer. */
+:root{
+  --bg:#EDF0EC; --surface:#F8FAF7; --inset:#E2E7E1; --ink:#18221E; --ink-2:#4B5953; --line:#CDD5CE;
+  --accent:#D81E6B; --accent-ink:#FFFFFF; --accent-soft:#F9D6E4; --ok:#1C8B5B; --warn:#9A5B00;
+  --stage-bg:#DDE3DC; --grid:#C3CBC4; --shadow:0 1px 2px rgba(24,34,30,.08),0 6px 20px rgba(24,34,30,.07);
+  --font-display:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101714; --surface:#17211D; --inset:#0C120F; --ink:#E7EEE9; --ink-2:#9AAAA2; --line:#2B3832;
+    --accent:#FF5A9A; --accent-ink:#1B0610; --accent-soft:#3A1627; --ok:#4DD39A; --warn:#F0B35A;
+    --stage-bg:#0B100E; --grid:#1D2923; --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101714; --surface:#17211D; --inset:#0C120F; --ink:#E7EEE9; --ink-2:#9AAAA2; --line:#2B3832;
+  --accent:#FF5A9A; --accent-ink:#1B0610; --accent-soft:#3A1627; --ok:#4DD39A; --warn:#F0B35A;
+  --stage-bg:#0B100E; --grid:#1D2923; --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 var(--font-body);padding-inline:16px;padding-block:0 32px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:17px;font-weight:700}
+h3{font-size:15px;font-weight:700}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,.time{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.solid{fill:currentColor;stroke:none}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding-block:12px;margin-inline:-16px;padding-inline:16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand h1{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.brand span{color:var(--ink-2);font-size:13px}
+.bar{display:flex;gap:8px;align-items:center}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:500}
+.btn:hover:not(:disabled){border-color:var(--ink-2)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover:not(:disabled){filter:brightness(1.06);border-color:var(--accent)}
+.btn.small{min-height:30px;padding:3px 10px;font-size:13px;border-radius:8px}
+.btn.quiet{background:transparent}
+.icon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:9px;border:1px solid transparent;background:transparent}
+.icon:hover{background:var(--inset)}
+.icon[aria-pressed="true"]{color:var(--accent)}
+
+/* page grid */
+.app{display:grid;gap:28px 24px;padding-block:20px;grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"stage" "brief" "options"}
+.col{min-width:0;display:flex;flex-direction:column;gap:24px}
+.col-stage{grid-area:stage}.col-brief{grid-area:brief}.col-options{grid-area:options}
+@media (min-width:820px){
+  .app{grid-template-columns:minmax(0,300px) minmax(0,1fr);grid-template-areas:"stage stage" "brief options"}
+}
+@media (min-width:1180px){
+  .app{grid-template-columns:minmax(260px,300px) minmax(0,1fr) minmax(300px,370px);grid-template-areas:"brief stage options"}
+  .col-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));align-self:start}
+}
+.section{display:flex;flex-direction:column;gap:10px;min-width:0}
+.hint{color:var(--ink-2);font-size:13px}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--ink-2);font-size:13px}
+
+/* brief */
+.drop{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px dashed var(--line);border-radius:12px;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .file{font-weight:600;overflow-wrap:anywhere}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+textarea{width:100%;min-height:84px;resize:vertical;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:transparent;font-size:12.5px;color:var(--ink-2)}
+.chip:hover{border-color:var(--accent);color:var(--ink)}
+.ask{padding:12px;border-radius:12px;background:var(--accent-soft);display:flex;flex-direction:column;gap:8px}
+.ask b{font-weight:600}
+
+/* layers */
+.layers{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.layer{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:4px 6px;border-radius:10px;border:1px solid transparent}
+.layer.sel{background:var(--surface);border-color:var(--accent)}
+.layer .name{background:none;border:0;text-align:left;padding:4px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.layer.off .name{color:var(--ink-2);text-decoration:line-through;text-decoration-color:var(--line)}
+.badge{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--inset);color:var(--ink-2);white-space:nowrap}
+.badge.on{background:var(--accent-soft);color:var(--ink)}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+.stagger{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+input[type=number],select{min-height:32px;padding:3px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+input[type=number]{width:74px}
+
+/* stage */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:6px 12px;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:600}
+.stage-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stage-tools .time{margin-left:auto;color:var(--ink-2)}
+.stage{position:relative;border-radius:16px;overflow:hidden;background-color:var(--stage-bg);
+  background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:16px 16px;display:grid;place-items:center;padding:16px;min-height:200px}
+.canvas{position:relative;width:min(100%,560px,calc(56vh * var(--ar,1)));box-shadow:var(--shadow)}
+.canvas svg{display:block;width:100%;height:100%}
+.selbox{position:absolute;pointer-events:none;border:2px dashed var(--accent);border-radius:4px;display:none}
+.mw{transform-box:fill-box;transform-origin:center;cursor:pointer}
+.stage.orig .mw{cursor:default}
+
+/* timeline */
+.timeline{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 10px;position:relative;touch-action:pan-y}
+.tl-body{position:relative}
+.trow{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:center;min-height:28px;gap:8px}
+.trow .tname{background:none;border:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;padding:2px 0;color:var(--ink-2)}
+.trow.sel .tname{color:var(--ink);font-weight:600}
+.track{position:relative;height:22px;border-radius:6px;background:var(--inset)}
+.ruler .track{background:none;height:18px}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--line);font-size:10.5px;color:var(--ink-2);padding-left:3px}
+.bar-m{position:absolute;top:3px;bottom:3px;border-radius:5px;background:var(--accent);cursor:grab;min-width:6px;touch-action:none}
+.bar-m.loop{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.28) 0 6px,transparent 6px 12px)}
+.bar-m:active{cursor:grabbing}
+.playhead-wrap{position:absolute;top:0;bottom:0;left:112px;right:0;pointer-events:none}
+.playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);transform:translateX(-1px)}
+
+/* panels */
+.panel{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.field .lab{font-size:12.5px;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
+.field output{color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.bez{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bez input{width:100%}
+
+/* option windows */
+.options{display:flex;flex-direction:column;gap:14px}
+.opt{display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.opt.used{border-color:var(--accent)}
+.opt .view{background-color:var(--stage-bg);background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:14px 14px;padding:10px;display:grid;place-items:center}
+.opt .view .mini{width:min(100%,240px,calc(170px * var(--ar,1)));aspect-ratio:var(--ar,1);box-shadow:var(--shadow)}
+.opt .view svg{display:block;width:100%;height:100%}
+.opt .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.opt .head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.tag{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--accent-soft)}
+.opt .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* log */
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;max-height:320px;overflow:auto}
+.log li{display:flex;flex-direction:column;gap:1px;padding-left:10px;border-left:2px solid var(--line);font-size:13px}
+.log li.you{border-left-color:var(--accent)}
+.log .meta{font-size:12px;color:var(--ink-2)}
+
+/* export dialog */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(10,16,13,.55);display:grid;place-items:center;padding:16px}
+.dialog{width:min(720px,100%);max-height:calc(100% - 8px);overflow:auto;background:var(--surface);border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:14px}
+.fmt{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:12px;border:1px solid var(--line)}
+.fmt .top2{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fmt .top2 b{font-family:var(--font-display);font-size:15px}
+.pill{font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--inset);color:var(--ink-2)}
+.pill.edit{background:var(--accent-soft);color:var(--ink)}
+.pill.warn{color:var(--warn)}
+.checks{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--ink-2)}
+.checks .ok{color:var(--ok)}.checks .bad{color:var(--warn)}
+.exp-preview{display:flex;justify-content:center;padding:12px;background:var(--stage-bg);border-radius:12px}
+.exp-preview img,.exp-preview video{max-width:100%;max-height:260px}
+.note{font-size:12.5px;color:var(--ink-2)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1>Motioner</h1><span>Give your still designs motion</span></div>
+  <div class="bar">
+    <button class="btn" id="undo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo</button>
+    <button class="btn" id="redo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>Redo</button>
+    <button class="btn primary" id="export-open" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v10m-4-4 4 4 4-4M5 19h14"/></svg>Export</button>
+  </div>
+</header>
+
+<div class="app">
+  <!-- stage + timeline -->
+  <div class="col col-stage">
+    <div class="stage-tools">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="mode-anim" aria-pressed="true">Animated</button>
+        <button type="button" id="mode-orig" aria-pressed="false">Original</button>
+      </div>
+      <button class="icon" id="play" type="button" aria-label="Pause" title="Play or pause (space)"></button>
+      <span class="time" id="time">0.00 / 3.00 s</span>
+    </div>
+    <div class="stage" id="stage"><div class="canvas" id="canvas"><div class="selbox" id="selbox"></div></div></div>
+    <div class="timeline" id="timeline" aria-label="Timeline"></div>
+    <div class="panel">
+      <div class="fields">
+        <div class="field"><label for="doc-dur">Length (seconds)</label><input type="number" id="doc-dur" min="0.5" max="30" step="0.5"></div>
+        <div class="field"><label for="doc-fps">Frames per second</label><select id="doc-fps"><option>24</option><option>30</option><option>60</option></select></div>
+        <div class="field"><label>&nbsp;</label><button class="btn small" id="fit" type="button">Fit length to motions</button></div>
+      </div>
+      <div class="fields">
+        <div class="field"><label for="post-sat">Saturation <output id="o-sat"></output></label><input type="range" id="post-sat" min="0" max="200"></div>
+        <div class="field"><label for="post-con">Contrast <output id="o-con"></output></label><input type="range" id="post-con" min="50" max="150"></div>
+        <div class="field"><label for="post-bri">Brightness <output id="o-bri"></output></label><input type="range" id="post-bri" min="50" max="150"></div>
+      </div>
+      <p class="hint">Color changes show in the preview, the animated SVG and the video. Lottie and After Effects files keep your original colors.</p>
+    </div>
+  </div>
+
+  <!-- brief + layers -->
+  <div class="col col-brief">
+    <section class="section">
+      <h2>Your design</h2>
+      <div class="drop" id="drop">
+        <div class="file" id="file-name">No design yet</div>
+        <p class="hint" id="file-note">Drop an SVG here or choose one. Illustrator, Photoshop and Figma files: export as SVG first.</p>
+        <div class="row">
+          <button class="btn small" id="pick" type="button">Choose file</button>
+          <button class="btn small quiet" id="sample" type="button">Use the example</button>
+        </div>
+        <input type="file" id="file" accept=".svg,.json,image/svg+xml,application/json" hidden>
+      </div>
+    </section>
+    <section class="section">
+      <h2>Describe the motion</h2>
+      <label class="sr-only" for="brief">Describe how things should move</label>
+      <textarea id="brief" placeholder="For example: the steam floats up slowly and loops"></textarea>
+      <div class="chips" id="chips"></div>
+      <div><button class="btn primary" id="suggest" type="button">Suggest motion</button></div>
+      <div id="ask"></div>
+    </section>
+    <section class="section">
+      <h2>Layers</h2>
+      <p class="hint">Tick a layer to let it move. Lock a layer to keep its motion as it is.</p>
+      <ul class="layers" id="layers"></ul>
+      <div class="stagger">
+        <label for="stag">Stagger</label><input type="number" id="stag" min="0" max="1" step="0.05" value="0"><span>s apart</span>
+        <button class="btn small" id="stag-apply" type="button">Apply to motions</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- options + controls + log -->
+  <div class="col col-options">
+    <section class="section">
+      <h2 id="opt-title">Ways to move</h2>
+      <div class="options" id="options"></div>
+    </section>
+    <section class="section">
+      <h2>Fine-tune</h2>
+      <div id="controls"></div>
+    </section>
+    <section class="section">
+      <h2>Decisions</h2>
+      <ol class="log" id="log"></ol>
+    </section>
+  </div>
+</div>
+
+<div class="overlay" id="export" hidden role="dialog" aria-modal="true" aria-labelledby="exp-title">
+  <div class="dialog">
+    <div class="row" style="justify-content:space-between"><h2 id="exp-title">Export</h2><button class="btn small" id="export-close" type="button">Close</button></div>
+    <p class="note">Each file is checked before you download it. Files marked Editable keep every motion as data you can change in other software.</p>
+    <div id="formats" class="options"></div>
+    <div id="exp-preview"></div>
+  </div>
+</div>
+<script>
+'use strict';
+/* =========================================================
+   Motioner core: helpers, state, SVG loading, motion engine
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const SVGNS = 'http://www.w3.org/2000/svg';
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const round = (v, n = 3) => { const p = 10 ** n; return Math.round(v * p) / p; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let uidN = 0;
+const uid = () => 'm' + (++uidN) + Math.random().toString(36).slice(2, 6);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const ICON = {
+  play: '<svg class="i solid" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg>',
+  pause: '<svg class="i solid" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  unlock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>',
+  down: '<svg class="i" viewBox="0 0 24 24"><path d="M12 4v10m-4-4 4 4 4-4M5 19h14"/></svg>',
+  copy: '<svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+  check: '<svg class="i" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg>'
+};
+
+/* ---------- the example design (clearly an example, not the user's work) ---------- */
+const SAMPLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<rect id="bg" width="400" height="400" fill="#F6D9B8"/>
+<circle id="sun" cx="290" cy="105" r="50" fill="#F4A340"/>
+<path id="hills" d="M0 318 C70 262 130 262 200 300 S340 332 400 276 V400 H0 Z" fill="#8FB59A"/>
+<ellipse id="saucer" cx="200" cy="338" rx="120" ry="17" fill="#3B2A24"/>
+<g id="steam-1" fill="none" stroke="#FFF6EA" stroke-width="9" stroke-linecap="round" opacity=".92"><path d="M160 200 c-15-18 15-30 0-52"/></g>
+<g id="steam-2" fill="none" stroke="#FFF6EA" stroke-width="9" stroke-linecap="round" opacity=".92"><path d="M200 206 c-15-18 15-30 0-58"/></g>
+<g id="steam-3" fill="none" stroke="#FFF6EA" stroke-width="9" stroke-linecap="round" opacity=".92"><path d="M240 200 c-15-18 15-30 0-52"/></g>
+<g id="cup" transform="translate(0 6)">
+<path d="M128 222 h144 v38 a72 64 0 0 1 -72 64 a72 64 0 0 1 -72 -64 Z" fill="#E4572E"/>
+<path d="M272 238 h12 a25 25 0 0 1 0 50 h-20" fill="none" stroke="#E4572E" stroke-width="12" stroke-linecap="round"/>
+<rect x="124" y="216" width="152" height="12" rx="6" fill="#B93C1E"/></g>
+<g id="beans"><ellipse cx="74" cy="352" rx="14" ry="9" transform="rotate(-25 74 352)" fill="#3B2A24"/><ellipse cx="104" cy="366" rx="14" ry="9" transform="rotate(20 104 366)" fill="#3B2A24"/><ellipse cx="318" cy="356" rx="14" ry="9" transform="rotate(30 318 356)" fill="#3B2A24"/></g>
+</svg>`;
+
+/* ---------- state ---------- */
+const state = {
+  svgText: '', fileName: '', template: null,
+  doc: { w: 400, h: 400, fps: 30, duration: 3, post: { sat: 100, con: 100, bri: 100 } },
+  layers: [], motions: {}, suggestions: {}, sel: null,
+  brief: '', question: null, stagger: 0,
+  log: [], undo: [], redo: [], editing: false, editSnap: null,
+  time: 0, playing: true, mode: 'animated', isExample: false
+};
+const layerByKey = k => state.layers.find(l => l.key === k);
+
+/* ---------- loading and reading an SVG ---------- */
+const NON_VISUAL = new Set(['defs', 'style', 'title', 'desc', 'metadata', 'script', 'lineargradient', 'radialgradient', 'clippath', 'mask', 'pattern', 'filter', 'symbol', 'marker', 'namedview']);
+const GRAPHIC = new Set(['g', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path', 'text', 'image', 'use', 'switch', 'a']);
+
+function sanitize(root) {
+  $$('script,foreignObject', root).forEach(n => n.remove());
+  [root, ...$$('*', root)].forEach(el => {
+    [...el.attributes].forEach(a => {
+      const n = a.name.toLowerCase();
+      if (n.startsWith('on') || ((n === 'href' || n === 'xlink:href') && /^\s*javascript:/i.test(a.value))) el.removeAttribute(a.name);
+    });
+  });
+}
+function parseSvg(text) {
+  const d = new DOMParser().parseFromString(text, 'image/svg+xml');
+  if (d.querySelector('parsererror') || d.documentElement.localName !== 'svg') throw new Error('This file is not a valid SVG.');
+  const svg = document.importNode(d.documentElement, true);
+  sanitize(svg);
+  let vb = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+  if (vb.length !== 4 || vb.some(isNaN)) {
+    const w = parseFloat(svg.getAttribute('width')) || 300, h = parseFloat(svg.getAttribute('height')) || 150;
+    vb = [0, 0, w, h]; svg.setAttribute('viewBox', vb.join(' '));
+  }
+  svg.removeAttribute('width'); svg.removeAttribute('height');
+  return { svg, vb };
+}
+function layerElements(root) {
+  const vis = e => GRAPHIC.has(e.localName.toLowerCase()) && !NON_VISUAL.has(e.localName.toLowerCase());
+  let kids = [...root.children].filter(vis);
+  if (kids.length === 1 && kids[0].localName === 'g' && !kids[0].getAttribute('transform')) {
+    const inner = [...kids[0].children].filter(vis);
+    if (inner.length > 1) kids = inner;
+  }
+  return kids;
+}
+function layerName(el, i) {
+  return el.getAttribute('id') || el.getAttribute('inkscape:label') || el.getAttribute('data-name') || `${el.localName} ${i + 1}`;
+}
+/* Builds a live copy of the design. Every layer sits inside a wrapper group, so the original markup is never touched. */
+function buildDom() {
+  const svg = state.template.cloneNode(true);
+  const map = {};
+  layerElements(svg).forEach((el, i) => {
+    const g = document.createElementNS(SVGNS, 'g');
+    g.setAttribute('class', 'mw'); g.setAttribute('data-key', 'L' + i);
+    el.replaceWith(g); g.appendChild(el); map['L' + i] = g;
+  });
+  return { svg, map };
+}
+function postFilter(p = state.doc.post) {
+  return (p.sat === 100 && p.con === 100 && p.bri === 100) ? '' : `saturate(${p.sat / 100}) contrast(${p.con / 100}) brightness(${p.bri / 100})`;
+}
+
+function loadDesign(text, name, opts = {}) {
+  const { svg, vb } = parseSvg(text);
+  state.svgText = text; state.fileName = name; state.template = svg; state.isExample = !!opts.example;
+  state.doc.w = vb[2]; state.doc.h = vb[3]; state.doc.ox = vb[0]; state.doc.oy = vb[1];
+  state.motions = {}; state.suggestions = {}; state.question = null; state.undo = []; state.redo = [];
+  compiledCache = new WeakMap();
+  const els = layerElements(svg);
+  state.layers = els.map((el, i) => ({ key: 'L' + i, name: layerName(el, i), tag: el.localName, animate: true, locked: false }));
+  state.sel = state.layers.length ? state.layers[0].key : null;
+}
+
+/* ---------- motion engine ---------- */
+const EASINGS = {
+  smooth: { label: 'Smooth', b: [0.45, 0, 0.55, 1] },
+  out: { label: 'Settle', b: [0.16, 1, 0.3, 1] },
+  in: { label: 'Build up', b: [0.5, 0, 0.75, 0] },
+  spring: { label: 'Springy', b: [0.34, 1.56, 0.64, 1] },
+  linear: { label: 'Even', b: [0, 0, 1, 1] }
+};
+const easeCache = new Map();
+function bezierEase(b) {
+  const key = b.join(',');
+  if (easeCache.has(key)) return easeCache.get(key);
+  const [x1, y1, x2, y2] = b;
+  let fn;
+  if (x1 === y1 && x2 === y2) fn = t => t;
+  else {
+    const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx, cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+    const sx = t => ((ax * t + bx) * t + cx) * t, sy = t => ((ay * t + by) * t + cy) * t, dx = t => (3 * ax * t + 2 * bx) * t + cx;
+    fn = x => {
+      if (x <= 0) return 0; if (x >= 1) return 1;
+      let t = x;
+      for (let i = 0; i < 8; i++) { const e = sx(t) - x; if (Math.abs(e) < 1e-6) return sy(t); const d = dx(t); if (Math.abs(d) < 1e-6) break; t -= e / d; }
+      let lo = 0, hi = 1; t = x;
+      for (let i = 0; i < 40; i++) { const e = sx(t); if (Math.abs(e - x) < 1e-6) break; if (x > e) lo = t; else hi = t; t = (hi - lo) / 2 + lo; }
+      return sy(t);
+    };
+  }
+  easeCache.set(key, fn); return fn;
+}
+const DIRS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+const TYPES = {
+  fade: { label: 'Fade in', dur: 0.8, loop: false, ease: 'smooth', dir: 'up', dirs: [], uses: ['o'] },
+  slide: { label: 'Slide in', dur: 0.7, loop: false, ease: 'out', dir: 'up', dirs: ['up', 'down', 'left', 'right'], uses: ['o', 'p'] },
+  pop: { label: 'Pop in', dur: 0.6, loop: false, ease: 'spring', dir: 'up', dirs: [], uses: ['o', 's'] },
+  spin: { label: 'Spin', dur: 2, loop: true, ease: 'linear', dir: 'cw', dirs: ['cw', 'ccw'], uses: ['r'] },
+  bounce: { label: 'Bounce', dur: 1.1, loop: true, ease: 'smooth', dir: 'up', dirs: ['up', 'down', 'left', 'right'], uses: ['p'] },
+  pulse: { label: 'Pulse', dur: 1.2, loop: true, ease: 'smooth', dir: 'up', dirs: [], uses: ['s'] },
+  float: { label: 'Float', dur: 3, loop: true, ease: 'smooth', dir: 'up', dirs: ['up', 'down', 'left', 'right'], uses: ['p'] },
+  wiggle: { label: 'Wiggle', dur: 0.8, loop: true, ease: 'smooth', dir: 'up', dirs: [], uses: ['r'] }
+};
+const validDir = (type, dir) => TYPES[type].dirs.includes(dir) ? dir : TYPES[type].dir;
+
+function baseKeyframes(m) {
+  const k = clamp(m.intensity, 0, 100) / 100, mn = Math.min(state.doc.w, state.doc.h);
+  const dist = (0.05 + 0.3 * k) * mn, d = DIRS[m.direction] || DIRS.up;
+  switch (m.type) {
+    case 'fade': return [{ t: 0, o: 0 }, { t: 1, o: 1 }];
+    case 'slide': return [{ t: 0, o: 0, x: -d.x * dist, y: -d.y * dist }, { t: 1, o: 1, x: 0, y: 0 }];
+    case 'pop': return [{ t: 0, o: 0, s: round(0.92 - 0.85 * k, 4) }, { t: 1, o: 1, s: 1 }];
+    case 'spin': { const turns = 1 + Math.round(k * 2), sg = m.direction === 'ccw' ? -1 : 1; return [{ t: 0, r: 0 }, { t: 1, r: 360 * turns * sg }]; }
+    case 'bounce': { const a = dist * 0.9, P = v => ({ x: d.x * v, y: d.y * v }); return [[0, 0], [.35, a], [.7, 0], [.85, a * .3], [1, 0]].map(([t, v]) => ({ t, ...P(v) })); }
+    case 'pulse': { const a = 0.04 + 0.3 * k; return [{ t: 0, s: 1 }, { t: .5, s: 1 + a }, { t: 1, s: 1 }]; }
+    case 'float': { const a = dist * 0.45, P = v => ({ x: d.x * v, y: d.y * v }); return [[0, 0], [.5, a], [1, 0]].map(([t, v]) => ({ t, ...P(v) })); }
+    case 'wiggle': { const a = 4 + 18 * k; return [[0, 0], [.2, -a], [.4, a], [.6, -a * .6], [.8, a * .6], [1, 0]].map(([t, r]) => ({ t, r })); }
+  }
+  return [{ t: 0 }, { t: 1 }];
+}
+let compiledCache = new WeakMap();
+function compile(m) {
+  if (compiledCache.has(m)) return compiledCache.get(m);
+  const raw = baseKeyframes(m), used = new Set();
+  raw.forEach(k => { ['o', 'x', 'y', 's', 'r'].forEach(p => { if (k[p] !== undefined) used.add(p); }); });
+  const kfs = raw.map(k => ({ t: k.t, o: k.o ?? 1, x: k.x ?? 0, y: k.y ?? 0, s: k.s ?? 1, r: k.r ?? 0 }));
+  const bez = m.bez.map(Number);
+  const c = {
+    kfs, used, bez, ease: bezierEase(bez), loop: !!m.loop,
+    delay: Math.max(0, +m.delay || 0), dur: Math.max(0.05, (+m.duration || 1) / Math.max(0.1, +m.speed || 1))
+  };
+  compiledCache.set(m, c); return c;
+}
+function sampleMotion(c, time) {
+  const local = time - c.delay, k = c.kfs;
+  let p;
+  if (local <= 0) p = 0; else if (c.loop) p = (local % c.dur) / c.dur; else p = Math.min(local / c.dur, 1);
+  if (p <= 0) return k[0];
+  if (p >= 1) return k[k.length - 1];
+  let i = 0; while (i < k.length - 2 && p >= k[i + 1].t) i++;
+  const a = k[i], b = k[i + 1], f = c.ease((p - a.t) / (b.t - a.t)), L = (u, v) => u + (v - u) * f;
+  return { o: L(a.o, b.o), x: L(a.x, b.x), y: L(a.y, b.y), s: L(a.s, b.s), r: L(a.r, b.r) };
+}
+function applyTo(w, s) {
+  if (!w) return;
+  if (!s) { w.style.opacity = ''; w.style.transform = ''; return; }
+  w.style.opacity = s.o;
+  w.style.transform = `translate(${s.x}px,${s.y}px) rotate(${s.r}deg) scale(${s.s})`;
+}
+function describe(m) {
+  const c = compile(m), d = round(c.dur, 2), loop = m.loop ? 'Repeats until the end.' : 'Plays once, then holds.';
+  const dist = Math.round((0.05 + 0.3 * m.intensity / 100) * Math.min(state.doc.w, state.doc.h));
+  const turns = 1 + Math.round(m.intensity / 100 * 2);
+  switch (m.type) {
+    case 'fade': return `Fades in over ${d} s. ${loop}`;
+    case 'slide': return `Slides ${m.direction} into place, about ${dist} px, while fading in over ${d} s. ${loop}`;
+    case 'pop': return `Grows from ${Math.round((0.92 - 0.85 * m.intensity / 100) * 100)}% to full size while fading in, over ${d} s. ${loop}`;
+    case 'spin': return `Spins ${turns} full turn${turns > 1 ? 's' : ''} ${m.direction === 'ccw' ? 'counter-clockwise' : 'clockwise'} every ${d} s. ${loop}`;
+    case 'bounce': return `Bounces ${m.direction} by about ${Math.round(dist * 0.9)} px every ${d} s. ${loop}`;
+    case 'pulse': return `Swells to ${Math.round((1.04 + 0.3 * m.intensity / 100) * 100)}% and back every ${d} s. ${loop}`;
+    case 'float': return `Drifts ${m.direction} by about ${Math.round(dist * 0.45)} px and back every ${d} s. ${loop}`;
+    case 'wiggle': return `Rocks side to side by up to ${Math.round(4 + 18 * m.intensity / 100)}° every ${d} s. ${loop}`;
+  }
+  return '';
+}
+function easingName(bez) {
+  const k = Object.keys(EASINGS).find(n => EASINGS[n].b.every((v, i) => Math.abs(v - bez[i]) < 1e-6));
+  return k || 'custom';
+}
+
+/* =========================================================
+   Reading your description, suggesting, history, decision log
+   ========================================================= */
+const LEX = [
+  ['fade', /\b(fade|fades|fading|appear|appears|reveal|reveals|dissolve)\b/],
+  ['slide', /\b(slide|slides|sliding|move|moves|moving|glide|glides|fly|flies|swipe|enter|enters|come in|comes in|drift in|drifts in)\b/],
+  ['pop', /\b(pop|pops|scale|scales|grow|grows|zoom|zooms|expand|expands|burst|swell)\b/],
+  ['spin', /\b(spin|spins|spinning|rotate|rotates|rotating|turn|turns|twirl|roll|rolls|revolve)\b/],
+  ['bounce', /\b(bounce|bounces|bouncy|bouncing|jump|jumps|hop|hops|boing)\b/],
+  ['pulse', /\b(pulse|pulses|pulsing|heartbeat|breathe|breathes|breathing|throb|throbs)\b/],
+  ['float', /\b(float|floats|floating|hover|hovers|drift|drifts|levitate|bob|bobs|sway|sways|swaying)\b/],
+  ['wiggle', /\b(wiggle|wiggles|shake|shakes|jiggle|wobble|wobbles|vibrate|shiver)\b/]
+];
+const VAGUE = /\b(alive|lively|dynamic|fun|playful|energy|magic|magical|cool|nice|better|life|vibe|feel|feels|animate|animated|animation|motion)\b/;
+const VAGUE_SET = [['float', 'Gentle float'], ['bounce', 'Playful bounce'], ['pulse', 'Heartbeat pulse']];
+const FROM = { left: 'right', right: 'left', top: 'down', above: 'down', bottom: 'up', below: 'up', up: 'down', down: 'up' };
+const APPROACH = {
+  subtle: { k: 28, d: 1.35, label: 'Subtle' },
+  balanced: { k: 55, d: 1, label: 'Balanced' },
+  bold: { k: 92, d: 0.75, label: 'Bold' }
+};
+
+function interpret(text) {
+  const t = text.toLowerCase();
+  const found = LEX.map(([type, re]) => { const m = re.exec(t); return m ? { type, at: m.index } : null; }).filter(Boolean).sort((a, b) => a.at - b.at).map(x => x.type);
+  const it = { types: found, ambiguous: false, reason: '', tone: null, loop: null, direction: null, stagger: false, targets: [], named: false };
+  if (/\b(slow|slowly|gentle|gently|calm|subtle|soft|softly|relaxed)\b/.test(t)) it.tone = 'subtle';
+  if (/\b(fast|quick|quickly|snappy|punchy|bold|strong|big|dramatic|energetic|intense)\b/.test(t)) it.tone = 'bold';
+  if (/\b(loop|loops|looping|repeat|repeats|forever|endless|continuous|continuously|always|constantly|keep)\b/.test(t)) it.loop = true;
+  if (/\b(once|one time|one-time)\b/.test(t)) it.loop = false;
+  const from = t.match(/\bfrom (?:the )?(left|right|top|bottom|above|below|up|down)\b/);
+  if (from) it.direction = FROM[from[1]];
+  else { const d = t.match(/\b(left|right|up|down|upward|upwards|downward|downwards)\b/); if (d) it.direction = d[1].replace(/ward.*/, ''); }
+  if (/counter/.test(t)) it.direction = 'ccw'; else if (/clockwise/.test(t)) it.direction = 'cw';
+  if (/\b(one by one|in sequence|sequentially|stagger|staggered|after each other|one after another|cascade|in turn)\b/.test(t)) it.stagger = true;
+  const eligible = state.layers.filter(l => l.animate && !l.locked);
+  const named = eligible.filter(l => {
+    const base = l.name.toLowerCase().replace(/[-_ ]?\d+$/, '').replace(/[-_]/g, ' ');
+    return base.length >= 3 && t.includes(base);
+  });
+  it.named = named.length > 0;
+  it.targets = (named.length ? named : eligible).map(l => l.key);
+  if (!found.length) {
+    it.ambiguous = true;
+    it.reason = VAGUE.test(t) ? 'Your description is open ("alive", "fun" and similar can mean many things), so these show three different directions.' : 'I could not tell what kind of motion you mean, so these show three different directions.';
+  } else if (found.length > 1) {
+    it.ambiguous = true;
+    it.reason = `You mentioned ${found.map(f => TYPES[f].label.toLowerCase()).join(' and ')}. A layer can have one motion for now, so each option shows one of them.`;
+  }
+  return it;
+}
+function buildMotion(type, approach, it, label) {
+  const A = APPROACH[approach], T = TYPES[type];
+  const ease = (approach === 'bold' && (type === 'pop' || type === 'slide')) ? 'spring' : T.ease;
+  return {
+    id: uid(), type, label: label || A.label, typeLabel: T.label, approach,
+    intensity: A.k, direction: validDir(type, it.direction), duration: round(T.dur * A.d, 2), speed: 1, delay: 0,
+    loop: it.loop === null ? T.loop : it.loop, easing: ease, bez: [...EASINGS[ease].b], source: 'suggestion',
+    recommended: !it.ambiguous && approach === (it.tone || 'balanced')
+  };
+}
+function makeApproaches(it) {
+  if (it.ambiguous) {
+    let list = it.types.length ? it.types.map(t => [t, TYPES[t].label]) : VAGUE_SET;
+    list = list.slice(0, 3);
+    const out = list.map(([t, l]) => buildMotion(t, 'balanced', it, l));
+    while (out.length < 3) out.push(buildMotion(list[0][0], out.length === 1 ? 'subtle' : 'bold', it));
+    return out;
+  }
+  return ['subtle', 'balanced', 'bold'].map(a => buildMotion(it.types[0], a, it));
+}
+
+/* ---------- history and decision log ---------- */
+function snap() {
+  return JSON.stringify({ motions: state.motions, suggestions: state.suggestions, layers: state.layers.map(l => [l.key, l.animate, l.locked]), doc: state.doc, sel: state.sel });
+}
+function restore(s) {
+  const o = JSON.parse(s);
+  state.motions = o.motions; state.suggestions = o.suggestions; state.doc = o.doc; state.sel = o.sel;
+  o.layers.forEach(([k, a, l]) => { const L = layerByKey(k); if (L) { L.animate = a; L.locked = l; } });
+}
+function addLog(who, text, why) { state.log.unshift({ at: new Date(), who, text, why: why || '' }); }
+function mutate(label, fn) {
+  const before = snap(); fn();
+  state.undo.push({ snap: before, label }); if (state.undo.length > 100) state.undo.shift();
+  state.redo = []; refreshAll();
+}
+function undo() {
+  const e = state.undo.pop(); if (!e) return;
+  state.redo.push({ snap: snap(), label: e.label }); restore(e.snap);
+  addLog('You', `Undid: ${e.label}`); refreshAll();
+}
+function redo() {
+  const e = state.redo.pop(); if (!e) return;
+  state.undo.push({ snap: snap(), label: e.label }); restore(e.snap);
+  addLog('You', `Redid: ${e.label}`); refreshAll();
+}
+function beginEdit() { if (!state.editing) { state.editSnap = snap(); state.editing = true; } }
+function endEdit(label, who, text, why) {
+  if (!state.editing) return;
+  state.undo.push({ snap: state.editSnap, label }); state.redo = []; state.editing = false;
+  addLog(who, text, why); refreshAll();
+}
+
+/* ---------- actions ---------- */
+function runBrief(forceType) {
+  const text = $('#brief').value.trim(); state.brief = text;
+  if (!text && !forceType) { state.question = { text: 'Write a few words about how things should move, for example "the cup pops in, then the steam floats".', choices: [] }; renderAsk(); return; }
+  const it = interpret(text);
+  if (forceType) { it.types = [forceType]; it.ambiguous = false; }
+  if (!it.targets.length) { state.question = { text: 'No layer is switched on for animation. Tick at least one layer first.', choices: [] }; renderAsk(); return; }
+  if (it.stagger && !state.stagger) { state.stagger = 0.15; $('#stag').value = 0.15; }
+  state.question = it.ambiguous ? { text: it.reason + ' Pick one, or describe it more.', choices: (it.types.length ? it.types.map(t => [t, TYPES[t].label]) : VAGUE_SET).map(([t, l]) => ({ type: t, label: l })) } : null;
+  mutate('Suggested motion', () => {
+    it.targets.forEach(k => { state.suggestions[k] = makeApproaches(it); });
+    if (!it.targets.includes(state.sel)) state.sel = it.targets[0];
+    const names = it.targets.map(k => layerByKey(k).name);
+    addLog('Motioner', `Suggested 3 options for ${names.length > 3 ? names.length + ' layers' : names.map(n => '"' + n + '"').join(', ')}.`,
+      forceType ? `You picked ${TYPES[forceType].label.toLowerCase()}.` : `From your words: "${text.length > 80 ? text.slice(0, 77) + '...' : text}".`);
+  });
+}
+function useSuggestion(key, i, all) {
+  const keys = all ? Object.keys(state.suggestions).filter(k => state.suggestions[k]?.[i] && !layerByKey(k).locked && layerByKey(k).animate) : [key];
+  mutate('Used a suggestion', () => {
+    keys.forEach((k, n) => {
+      const s = state.suggestions[k][i];
+      state.motions[k] = { ...s, id: uid(), delay: all && state.stagger ? round(n * state.stagger, 2) : s.delay, source: 'suggestion' };
+    });
+    const s0 = state.suggestions[keys[0]][i];
+    addLog('You (accepted a suggestion)', `Used "${s0.label}" ${s0.typeLabel.toLowerCase()} on ${keys.length > 1 ? keys.length + ' layers' : '"' + layerByKey(keys[0]).name + '"'}.`,
+      'Suggested from your description. Change anything in Fine-tune.');
+  });
+}
+function skipSuggestion(key, i) {
+  mutate('Skipped a suggestion', () => {
+    const s = state.suggestions[key][i];
+    state.suggestions[key].splice(i, 1);
+    addLog('You', `Skipped "${s.label}" for "${layerByKey(key).name}".`, 'Nothing was changed.');
+  });
+}
+function removeMotion(key) {
+  mutate('Removed a motion', () => { delete state.motions[key]; addLog('You', `Removed the motion from "${layerByKey(key).name}".`, 'The layer is back to its original state.'); });
+}
+function applyStagger() {
+  const keys = state.layers.filter(l => state.motions[l.key] && !l.locked).map(l => l.key);
+  if (!keys.length) return;
+  mutate('Applied stagger', () => {
+    keys.forEach((k, n) => { state.motions[k] = { ...state.motions[k], delay: round(n * state.stagger, 2), source: 'you' }; });
+    addLog('You', `Staggered ${keys.length} motions by ${state.stagger} s each.`, 'Each layer starts a little after the one before.');
+  });
+}
+function toggleLayer(key, prop) {
+  const l = layerByKey(key);
+  mutate(prop === 'animate' ? 'Toggled animate' : 'Toggled lock', () => {
+    l[prop] = !l[prop];
+    addLog('You', prop === 'animate' ? `${l.animate ? 'Switched on' : 'Switched off'} animation for "${l.name}".` : `${l.locked ? 'Locked' : 'Unlocked'} "${l.name}".`, '');
+  });
+}
+function retype(m, type) {
+  const T = TYPES[type];
+  return { ...m, type, typeLabel: T.label, label: T.label, direction: validDir(type, m.direction), duration: T.dur, loop: T.loop, easing: T.ease, bez: [...EASINGS[T.ease].b], source: 'you' };
+}
+const FIELD_LABEL = { type: 'type', intensity: 'intensity', direction: 'direction', duration: 'duration', speed: 'speed', delay: 'delay', loop: 'repeat', easing: 'easing', bez: 'easing curve' };
+function editMotion(field, value, final) {
+  const k = state.sel, m = state.motions[k], l = layerByKey(k);
+  if (!m || l.locked) return;
+  beginEdit();
+  let n;
+  if (field === 'type') n = retype(m, value);
+  else if (field === 'easing') { n = { ...m, easing: value, bez: value === 'custom' ? m.bez : [...EASINGS[value].b], source: 'you' }; }
+  else n = { ...m, [field]: value, source: 'you' };
+  if (field === 'bez') n.easing = easingName(n.bez);
+  state.motions[k] = n;
+  if (final) {
+    const shown = field === 'bez' ? value.join(', ') : field === 'loop' ? (value ? 'on' : 'off') : (field === 'type' ? TYPES[value].label : value);
+    endEdit('Changed ' + FIELD_LABEL[field], 'You', `Changed ${FIELD_LABEL[field]} of "${l.name}" to ${shown}.`, 'Manual adjustment.');
+  } else { renderTimeline(); renderControlOutputs(); }
+}
+function fitLength() {
+  const cs = Object.values(state.motions).map(compile);
+  if (!cs.length) return;
+  const len = Math.max(...cs.map(c => c.delay + c.dur));
+  mutate('Fit length', () => { state.doc.duration = clamp(round(len, 1), 0.5, 30); addLog('You', `Set the length to ${state.doc.duration} s to fit every motion.`, ''); });
+}
+
+/* =========================================================
+   Interface rendering
+   ========================================================= */
+let stage = { map: null };
+let previews = [];
+const EXAMPLES = ['Steam floats up slowly and loops', 'Everything pops in, one by one', 'Make it feel alive', 'The cup bounces'];
+
+function mountStage() {
+  const canvas = $('#canvas'); $('svg', canvas)?.remove();
+  let svg;
+  if (state.mode === 'animated') { const d = buildDom(); svg = d.svg; stage = { map: d.map }; }
+  else { svg = state.template.cloneNode(true); stage = { map: null }; }
+  canvas.insertBefore(svg, $('#selbox'));
+  canvas.style.setProperty('--ar', state.doc.w / state.doc.h); canvas.style.aspectRatio = `${state.doc.w} / ${state.doc.h}`;
+  $('#stage').classList.toggle('orig', state.mode !== 'animated');
+  applyPost();
+}
+function applyPost() {
+  const svg = $('svg', $('#canvas')); if (!svg) return;
+  svg.style.filter = state.mode === 'animated' ? postFilter() : '';
+}
+/* Large layers that cover the whole canvas are left out of animation, and the log says so. */
+function detectBackground() {
+  if (!stage.map) return;
+  const area = state.doc.w * state.doc.h;
+  state.layers.forEach(l => {
+    try {
+      const b = stage.map[l.key].getBBox();
+      if (b.width * b.height >= area * 0.85) {
+        l.animate = false;
+        addLog('Motioner', `Left "${l.name}" out of animation.`, 'It covers the whole canvas, so it looks like a background. Tick it in Layers to animate it.');
+      }
+    } catch (e) { /* not measurable */ }
+  });
+}
+
+function renderTop() {
+  $('#undo').disabled = !state.undo.length; $('#redo').disabled = !state.redo.length;
+  $('#undo').title = state.undo.length ? 'Undo: ' + state.undo[state.undo.length - 1].label : '';
+  $('#redo').title = state.redo.length ? 'Redo: ' + state.redo[state.redo.length - 1].label : '';
+  $('#file-name').textContent = state.fileName ? state.fileName + (state.isExample ? ' (example design)' : '') : 'No design yet';
+}
+function renderLayers() {
+  $('#layers').innerHTML = state.layers.map(l => {
+    const m = state.motions[l.key];
+    const badge = !l.animate ? 'still' : m ? m.typeLabel : 'no motion';
+    return `<li class="layer ${l.key === state.sel ? 'sel' : ''} ${l.animate ? '' : 'off'}" data-key="${l.key}">
+      <input type="checkbox" ${l.animate ? 'checked' : ''} data-act="animate" aria-label="Animate ${esc(l.name)}">
+      <button class="name" type="button" data-act="select" title="${esc(l.name)}">${esc(l.name)}</button>
+      <span class="badge ${m && l.animate ? 'on' : ''}">${esc(badge)}</span>
+      <button class="icon" type="button" data-act="lock" aria-pressed="${l.locked}" aria-label="${l.locked ? 'Unlock' : 'Lock'} ${esc(l.name)}">${l.locked ? ICON.lock : ICON.unlock}</button>
+    </li>`;
+  }).join('') || '<li class="empty">Load a design to see its layers.</li>';
+}
+function renderAsk() {
+  const q = state.question, host = $('#ask');
+  if (!q) { host.innerHTML = ''; return; }
+  host.innerHTML = `<div class="ask"><p>${esc(q.text)}</p>${q.choices.length ? `<div class="row">${q.choices.map(c => `<button class="btn small" type="button" data-type="${c.type}">${esc(c.label)}</button>`).join('')}</div>` : ''}</div>`;
+}
+function renderOptions() {
+  const host = $('#options'); previews = [];
+  const l = layerByKey(state.sel);
+  $('#opt-title').textContent = l ? `Ways to move "${l.name}"` : 'Ways to move';
+  if (!l) { host.innerHTML = '<div class="empty">Load a design, then describe the motion you want.</div>'; return; }
+  const list = state.suggestions[l.key] || [];
+  if (!list.length) {
+    host.innerHTML = `<div class="empty">No options for this layer yet. Describe the motion on the left and press Suggest motion.${state.motions[l.key] ? ' This layer already has a motion you chose, shown below in Fine-tune.' : ''}</div>`;
+    return;
+  }
+  const others = Object.keys(state.suggestions).filter(k => state.suggestions[k].length && layerByKey(k).animate && !layerByKey(k).locked);
+  host.innerHTML = list.map((s, i) => {
+    const cur = state.motions[l.key], used = cur && cur.source === 'suggestion' && cur.label === s.label && cur.type === s.type;
+    return `<article class="opt ${used ? 'used' : ''}" data-i="${i}">
+      <div class="view"><div class="mini" style="--ar:${state.doc.w / state.doc.h}"></div></div>
+      <div class="body">
+        <div class="head"><h3>${esc(s.label)}</h3><span class="hint">${esc(s.typeLabel)}</span>${s.recommended ? '<span class="tag">Matches your words</span>' : ''}${used ? '<span class="tag">In use</span>' : ''}</div>
+        <p>${esc(describe(s))}</p>
+        <div class="acts">
+          <button class="btn primary small" type="button" data-act="use" ${l.locked ? 'disabled' : ''}>${used ? 'Use again' : 'Use this'}</button>
+          ${others.length > 1 ? `<button class="btn small" type="button" data-act="use-all">Use on ${others.length} layers</button>` : ''}
+          <button class="btn small quiet" type="button" data-act="skip">Skip</button>
+        </div></div></article>`;
+  }).join('');
+  $$('.opt', host).forEach(card => {
+    const i = +card.dataset.i, d = buildDom(), host2 = $('.mini', card);
+    Object.keys(d.map).forEach(k => { if (k !== l.key) d.map[k].style.opacity = '.3'; });
+    host2.appendChild(d.svg); previews.push({ map: d.map, key: l.key, motion: list[i] });
+  });
+}
+const DIR_LABEL = { up: 'Up', down: 'Down', left: 'Left', right: 'Right', cw: 'Clockwise', ccw: 'Counter-clockwise' };
+function renderControls() {
+  const host = $('#controls'), l = layerByKey(state.sel), m = l && state.motions[l.key];
+  if (!l) { host.innerHTML = '<div class="empty">Select a layer to adjust it.</div>'; return; }
+  if (!m) { host.innerHTML = `<div class="empty">"${esc(l.name)}" has no motion yet. Use one of the options above and it appears here for fine-tuning.</div>`; return; }
+  const T = TYPES[m.type], dis = l.locked ? 'disabled' : '';
+  const ez = easingName(m.bez);
+  host.innerHTML = `<div class="panel">
+    ${l.locked ? '<p class="hint">This layer is locked. Unlock it to change its motion.</p>' : ''}
+    <div class="fields">
+      <div class="field"><label for="f-type">Type</label><select id="f-type" data-f="type" ${dis}>${Object.keys(TYPES).map(t => `<option value="${t}" ${t === m.type ? 'selected' : ''}>${TYPES[t].label}</option>`).join('')}</select></div>
+      <div class="field"><label for="f-direction">Direction</label><select id="f-direction" data-f="direction" ${dis || (T.dirs.length ? '' : 'disabled')}>${T.dirs.length ? T.dirs.map(d => `<option value="${d}" ${d === m.direction ? 'selected' : ''}>${DIR_LABEL[d]}</option>`).join('') : '<option>Not used</option>'}</select></div>
+      <div class="field"><label for="f-intensity">Intensity <output></output></label><input type="range" id="f-intensity" data-f="intensity" min="0" max="100" step="1" value="${m.intensity}" ${dis || (m.type === 'fade' ? 'disabled' : '')}></div>
+      <div class="field"><label for="f-duration">Duration <output></output></label><input type="range" id="f-duration" data-f="duration" min="0.2" max="6" step="0.05" value="${m.duration}" ${dis}></div>
+      <div class="field"><label for="f-speed">Speed <output></output></label><input type="range" id="f-speed" data-f="speed" min="0.25" max="3" step="0.05" value="${m.speed}" ${dis}></div>
+      <div class="field"><label for="f-delay">Delay <output></output></label><input type="range" id="f-delay" data-f="delay" min="0" max="5" step="0.05" value="${m.delay}" ${dis}></div>
+      <div class="field"><span class="lab">Repeat</span><label><input type="checkbox" id="f-loop" data-f="loop" ${m.loop ? 'checked' : ''} ${dis}> Keep repeating</label></div>
+      <div class="field"><label for="f-easing">Easing</label><select id="f-easing" data-f="easing" ${dis}>${Object.keys(EASINGS).map(e => `<option value="${e}" ${e === ez ? 'selected' : ''}>${EASINGS[e].label}</option>`).join('')}<option value="custom" ${ez === 'custom' ? 'selected' : ''}>Custom curve</option></select></div>
+    </div>
+    <div class="field"><span class="lab">Curve (x1, y1, x2, y2)</span><div class="bez">${m.bez.map((v, i) => `<input type="number" step="0.01" ${i % 2 === 0 ? 'min="0" max="1"' : 'min="-1" max="2"'} value="${v}" data-bez="${i}" aria-label="Curve value ${i + 1}" ${dis}>`).join('')}</div></div>
+    <p class="hint" id="f-desc">${esc(describe(m))}</p>
+    <div><button class="btn small" type="button" data-act="remove" ${dis}>Remove motion</button></div>
+  </div>`;
+  renderControlOutputs();
+}
+function renderControlOutputs() {
+  const m = state.motions[state.sel]; if (!m) return;
+  const fmt = { intensity: v => v + '%', duration: v => (+v).toFixed(2) + ' s', speed: v => (+v).toFixed(2) + '×', delay: v => (+v).toFixed(2) + ' s' };
+  $$('#controls input[type=range]').forEach(r => { const o = $('output', r.closest('.field')); if (o) o.textContent = fmt[r.dataset.f](r.value); });
+  const d = $('#f-desc'); if (d) d.textContent = describe(m);
+}
+function renderLog() {
+  $('#log').innerHTML = state.log.slice(0, 60).map(e => {
+    const t = e.at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<li class="${e.who.startsWith('You') ? 'you' : ''}"><span>${esc(e.text)}</span><span class="meta">${t} · ${esc(e.who)}${e.why ? ' · ' + esc(e.why) : ''}</span></li>`;
+  }).join('') || '<li class="hint">Every change you or Motioner makes is listed here, with who decided it and why.</li>';
+}
+function renderDocPost() {
+  const set = (id, v) => { const el = $(id); if (el && document.activeElement !== el) el.value = v; };
+  set('#doc-dur', state.doc.duration); set('#doc-fps', state.doc.fps);
+  set('#post-sat', state.doc.post.sat); set('#post-con', state.doc.post.con); set('#post-bri', state.doc.post.bri);
+  $('#o-sat').textContent = state.doc.post.sat + '%'; $('#o-con').textContent = state.doc.post.con + '%'; $('#o-bri').textContent = state.doc.post.bri + '%';
+  applyPost();
+}
+function renderPlay() {
+  const b = $('#play'); b.innerHTML = state.playing ? ICON.pause : ICON.play; b.setAttribute('aria-label', state.playing ? 'Pause' : 'Play');
+  $('#mode-anim').setAttribute('aria-pressed', state.mode === 'animated'); $('#mode-orig').setAttribute('aria-pressed', state.mode !== 'animated');
+}
+function renderTimeline() {
+  const dur = state.doc.duration, host = $('#timeline');
+  const step = dur <= 4 ? 0.5 : dur <= 12 ? 1 : 5;
+  let ticks = ''; for (let t = 0; t <= dur + 1e-6; t += step) ticks += `<div class="tick" style="left:${t / dur * 100}%">${round(t, 1)}</div>`;
+  const rows = state.layers.map(l => {
+    const m = state.motions[l.key]; let bar = '';
+    if (m) {
+      const c = compile(m), left = clamp(c.delay / dur * 100, 0, 98), end = c.loop ? dur : Math.min(c.delay + c.dur, dur);
+      bar = `<div class="bar-m ${c.loop ? 'loop' : ''}" data-key="${l.key}" style="left:${left}%;width:${Math.max(1.5, (end - c.delay) / dur * 100)}%" title="Drag to change the delay"></div>`;
+    }
+    return `<div class="trow ${l.key === state.sel ? 'sel' : ''}" data-key="${l.key}"><button class="tname" type="button" data-act="select">${esc(l.name)}</button><div class="track">${bar}</div></div>`;
+  }).join('');
+  host.innerHTML = `<div class="tl-body"><div class="trow ruler"><span></span><div class="track">${ticks}</div></div>${rows}<div class="playhead-wrap"><div class="playhead" id="playhead"></div></div></div>`;
+}
+function refreshAll() {
+  renderTop(); renderLayers(); renderAsk(); renderOptions(); renderControls(); renderTimeline(); renderDocPost(); renderLog(); renderPlay();
+}
+
+/* ---------- playback ---------- */
+let lastTs = performance.now();
+function renderFrame() {
+  const t = state.time;
+  if (stage.map) state.layers.forEach(l => applyTo(stage.map[l.key], activeMotion(l.key) ? sampleMotion(compile(activeMotion(l.key)), t) : null));
+  previews.forEach(p => applyTo(p.map[p.key], sampleMotion(compile(p.motion), t)));
+  $('#time').textContent = `${t.toFixed(2)} / ${state.doc.duration.toFixed(2)} s`;
+  const ph = $('#playhead'); if (ph) ph.style.left = (t / state.doc.duration * 100) + '%';
+  const sb = $('#selbox'), w = stage.map && stage.map[state.sel];
+  if (w && state.mode === 'animated') {
+    const r = w.getBoundingClientRect(), c = $('#canvas').getBoundingClientRect();
+    if (r.width > 0) { sb.style.display = 'block'; sb.style.left = (r.left - c.left - 3) + 'px'; sb.style.top = (r.top - c.top - 3) + 'px'; sb.style.width = (r.width + 6) + 'px'; sb.style.height = (r.height + 6) + 'px'; } else sb.style.display = 'none';
+  } else sb.style.display = 'none';
+}
+function tick(now) {
+  const dt = Math.min(0.1, (now - lastTs) / 1000); lastTs = now;
+  if (state.playing) { state.time += dt; if (state.time >= state.doc.duration) state.time %= state.doc.duration; }
+  renderFrame(); requestAnimationFrame(tick);
+}
+
+/* =========================================================
+   Events and start-up
+   ========================================================= */
+function select(key) {
+  state.sel = key; renderLayers(); renderOptions(); renderControls(); renderTimeline();
+}
+function startDesign(text, name, opts = {}) {
+  loadDesign(text, name, opts);
+  state.log = []; state.time = 0;
+  addLog('You', `Opened "${name}".`, `${state.layers.length} layers found. The original file is never changed.`);
+  mountStage(); detectBackground();
+  const first = state.layers.find(l => l.animate); if (first) state.sel = first.key;
+  refreshAll();
+  $('#file-note').textContent = opts.example ? 'This is an example design so you can try the tool. Choose your own SVG whenever you like.' : 'Your original file stays untouched. Motion lives in a separate layer.';
+}
+async function handleFile(file) {
+  const note = $('#file-note');
+  if (/\.(ai|psd|pdf|fig|xd|sketch)$/i.test(file.name)) { note.textContent = 'This browser cannot read that file type. In Illustrator, Photoshop, Figma or XD, export it as SVG, then drop the SVG here.'; return; }
+  try {
+    const text = await file.text();
+    if (/\.json$/i.test(file.name) || text.trim().startsWith('{')) loadProject(text); else startDesign(text, file.name);
+  } catch (e) { note.textContent = e.message || 'That file could not be opened.'; }
+}
+function setTimeFromX(x) {
+  const r = $('.ruler .track')?.getBoundingClientRect(); if (!r) return;
+  state.time = clamp((x - r.left) / r.width, 0, 1) * state.doc.duration; state.playing = false; renderPlay();
+}
+function wire() {
+  // top bar
+  $('#undo').onclick = undo; $('#redo').onclick = redo;
+  $('#play').onclick = () => { state.playing = !state.playing; renderPlay(); };
+  $('#mode-anim').onclick = () => { state.mode = 'animated'; mountStage(); renderPlay(); };
+  $('#mode-orig').onclick = () => { state.mode = 'original'; mountStage(); renderPlay(); };
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !e.target.closest('input,textarea,select,button')) { e.preventDefault(); state.playing = !state.playing; renderPlay(); }
+  });
+  // file
+  $('#pick').onclick = () => $('#file').click();
+  $('#file').onchange = e => { if (e.target.files[0]) handleFile(e.target.files[0]); e.target.value = ''; };
+  $('#sample').onclick = () => startDesign(SAMPLE_SVG, 'Morning cup.svg', { example: true });
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+  // brief
+  $('#chips').innerHTML = EXAMPLES.map(t => `<button class="chip" type="button">${esc(t)}</button>`).join('');
+  $('#chips').onclick = e => { const b = e.target.closest('.chip'); if (b) { $('#brief').value = b.textContent; runBrief(); } };
+  $('#suggest').onclick = () => runBrief();
+  $('#ask').onclick = e => { const b = e.target.closest('[data-type]'); if (b) runBrief(b.dataset.type); };
+  // layers
+  $('#layers').addEventListener('click', e => {
+    const li = e.target.closest('.layer'); if (!li) return; const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'select') select(li.dataset.key); else if (act === 'lock') toggleLayer(li.dataset.key, 'locked');
+  });
+  $('#layers').addEventListener('change', e => { const li = e.target.closest('.layer'); if (li && e.target.dataset.act === 'animate') toggleLayer(li.dataset.key, 'animate'); });
+  $('#stag').onchange = e => { state.stagger = clamp(+e.target.value || 0, 0, 1); e.target.value = state.stagger; };
+  $('#stag-apply').onclick = applyStagger;
+  // stage
+  $('#canvas').addEventListener('click', e => { const g = e.target.closest('.mw'); if (g && state.mode === 'animated') select(g.dataset.key); });
+  // options
+  $('#options').addEventListener('click', e => {
+    const card = e.target.closest('.opt'), act = e.target.closest('[data-act]')?.dataset.act; if (!card || !act) return;
+    const i = +card.dataset.i;
+    if (act === 'use') useSuggestion(state.sel, i, false); else if (act === 'use-all') useSuggestion(state.sel, i, true); else if (act === 'skip') skipSuggestion(state.sel, i);
+  });
+  // controls
+  const ctl = $('#controls');
+  ctl.addEventListener('input', e => { const t = e.target; if (t.type === 'range' && t.dataset.f) editMotion(t.dataset.f, +t.value, false); });
+  ctl.addEventListener('change', e => {
+    const t = e.target, f = t.dataset.f;
+    if (f) editMotion(f, t.type === 'checkbox' ? t.checked : t.type === 'range' ? +t.value : t.value, true);
+    else if (t.dataset.bez !== undefined) {
+      const i = +t.dataset.bez, m = state.motions[state.sel]; if (!m) return;
+      const b = [...m.bez]; b[i] = clamp(+t.value || 0, i % 2 ? -1 : 0, i % 2 ? 2 : 1); editMotion('bez', b, true);
+    }
+  });
+  ctl.addEventListener('click', e => { if (e.target.closest('[data-act=remove]')) removeMotion(state.sel); });
+  // length and colors
+  $('#doc-dur').onchange = e => { const v = clamp(+e.target.value || 3, 0.5, 30); mutate('Changed length', () => { state.doc.duration = v; state.time = Math.min(state.time, v); addLog('You', `Set the length to ${v} s.`, ''); }); };
+  $('#doc-fps').onchange = e => { const v = +e.target.value; mutate('Changed frame rate', () => { state.doc.fps = v; addLog('You', `Set the frame rate to ${v} per second.`, ''); }); };
+  $('#fit').onclick = fitLength;
+  [['sat', 'Saturation'], ['con', 'Contrast'], ['bri', 'Brightness']].forEach(([k, name]) => {
+    const el = $('#post-' + k);
+    el.oninput = () => { beginEdit(); state.doc.post[k] = +el.value; renderDocPost(); };
+    el.onchange = () => endEdit('Changed ' + name.toLowerCase(), 'You', `Set ${name.toLowerCase()} to ${el.value}%.`, 'Shows in the preview, SVG and video.');
+  });
+  // timeline: scrub the playhead, drag a bar to change its delay
+  const tl = $('#timeline'); let drag = null, scrub = false;
+  tl.addEventListener('click', e => { const r = e.target.closest('.trow'); if (r && e.target.closest('[data-act=select]')) select(r.dataset.key); });
+  tl.addEventListener('pointerdown', e => {
+    const bar = e.target.closest('.bar-m');
+    if (bar) {
+      const key = bar.dataset.key, m = state.motions[key];
+      if (!m || layerByKey(key).locked) return;
+      select(key); const b2 = $(`.bar-m[data-key="${key}"]`);
+      drag = { key, x: e.clientX, start: +m.delay || 0, w: $('.ruler .track').getBoundingClientRect().width, el: b2 };
+      b2.setPointerCapture(e.pointerId); beginEdit(); e.preventDefault(); return;
+    }
+    if (e.target.closest('.track')) { scrub = true; tl.setPointerCapture(e.pointerId); setTimeFromX(e.clientX); }
+  });
+  tl.addEventListener('pointermove', e => {
+    if (drag) {
+      const dur = state.doc.duration, d = clamp(Math.round((drag.start + (e.clientX - drag.x) / drag.w * dur) / 0.05) * 0.05, 0, Math.max(0, dur - 0.1));
+      state.motions[drag.key] = { ...state.motions[drag.key], delay: round(d, 2), source: 'you' };
+      drag.el.style.left = (d / dur * 100) + '%'; drag.moved = round(d, 2);
+    } else if (scrub) setTimeFromX(e.clientX);
+  });
+  const up = () => {
+    if (drag) { const k = drag.key, d = drag.moved; drag = null; endEdit('Moved a motion', 'You', `Moved "${layerByKey(k).name}" to start at ${d ?? 0} s.`, 'Dragged on the timeline.'); }
+    scrub = false;
+  };
+  tl.addEventListener('pointerup', up); tl.addEventListener('pointercancel', up);
+  // export
+  $('#export-open').onclick = openExport;
+  $('#export-close').onclick = () => { $('#export').hidden = true; };
+  $('#export').addEventListener('click', e => { if (e.target.id === 'export') $('#export').hidden = true; });
+}
+
+function init() {
+  wire();
+  $('#brief').value = EXAMPLES[0];
+  startDesign(SAMPLE_SVG, 'Morning cup.svg', { example: true });
+  runBrief();
+  state.undo = []; state.redo = [];
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { state.playing = false; state.time = 1.2; }
+  refreshAll();
+  requestAnimationFrame(t => { lastTs = t; tick(t); });
+}
+
+/* =========================================================
+   Exports, part 1: geometry, export model, Lottie
+   ========================================================= */
+function activeMotion(key) { const l = layerByKey(key); return l && l.animate && state.motions[key] ? state.motions[key] : null; }
+
+function arcToBeziers(x1, y1, rx, ry, phiDeg, fa, fs, x2, y2) {
+  if (!rx || !ry) return [[x1, y1, x2, y2, x2, y2]];
+  rx = Math.abs(rx); ry = Math.abs(ry);
+  const phi = phiDeg * Math.PI / 180, cos = Math.cos(phi), sin = Math.sin(phi);
+  const dx = (x1 - x2) / 2, dy = (y1 - y2) / 2, x1p = cos * dx + sin * dy, y1p = -sin * dx + cos * dy;
+  const lam = x1p * x1p / (rx * rx) + y1p * y1p / (ry * ry);
+  if (lam > 1) { const s = Math.sqrt(lam); rx *= s; ry *= s; }
+  const sign = fa === fs ? -1 : 1;
+  const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p, den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+  const co = sign * Math.sqrt(Math.max(0, num / den));
+  const cxp = co * rx * y1p / ry, cyp = -co * ry * x1p / rx;
+  const cx = cos * cxp - sin * cyp + (x1 + x2) / 2, cy = sin * cxp + cos * cyp + (y1 + y2) / 2;
+  const ux = (x1p - cxp) / rx, uy = (y1p - cyp) / ry, vx = (-x1p - cxp) / rx, vy = (-y1p - cyp) / ry;
+  const th1 = Math.atan2(uy, ux);
+  let dth = Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+  if (!fs && dth > 0) dth -= 2 * Math.PI; if (fs && dth < 0) dth += 2 * Math.PI;
+  const n = Math.max(1, Math.ceil(Math.abs(dth) / (Math.PI / 2) - 1e-9)), d = dth / n, al = 4 / 3 * Math.tan(d / 4), out = [];
+  const P = (x, y) => [cos * rx * x - sin * ry * y + cx, sin * rx * x + cos * ry * y + cy];
+  for (let k = 0; k < n; k++) {
+    const a1 = th1 + k * d, a2 = a1 + d;
+    const c1 = P(Math.cos(a1) - al * Math.sin(a1), Math.sin(a1) + al * Math.cos(a1));
+    const c2 = P(Math.cos(a2) + al * Math.sin(a2), Math.sin(a2) - al * Math.cos(a2));
+    const e = k === n - 1 ? [x2, y2] : P(Math.cos(a2), Math.sin(a2));
+    out.push([c1[0], c1[1], c2[0], c2[1], e[0], e[1]]);
+  }
+  return out;
+}
+function parsePathData(d) {
+  const tk = d.match(/[a-df-zA-DF-Z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) || [];
+  let i = 0, cmd = '', x = 0, y = 0, sx = 0, sy = 0, pc = null, pq = null, prev = '';
+  const subs = []; let cur = null;
+  const start = (px, py) => { cur = { v: [[px, py]], i: [[0, 0]], o: [[0, 0]], c: false }; subs.push(cur); };
+  const line = (px, py) => { cur.v.push([px, py]); cur.i.push([0, 0]); cur.o.push([0, 0]); };
+  const cubic = (a, b, c, dd, px, py) => { const n = cur.v.length - 1; cur.o[n] = [a - cur.v[n][0], b - cur.v[n][1]]; cur.v.push([px, py]); cur.i.push([c - px, dd - py]); cur.o.push([0, 0]); };
+  const close = () => {
+    if (!cur) return; cur.c = true;
+    const f = cur.v[0], l = cur.v[cur.v.length - 1];
+    if (cur.v.length > 1 && Math.hypot(f[0] - l[0], f[1] - l[1]) < 1e-6) { cur.i[0] = cur.i[cur.i.length - 1]; cur.v.pop(); cur.i.pop(); cur.o.pop(); }
+    x = sx; y = sy; cur = null;
+  };
+  const num = () => parseFloat(tk[i++]);
+  while (i < tk.length) {
+    if (/^[a-zA-Z]$/.test(tk[i])) { cmd = tk[i++]; if (cmd === 'Z' || cmd === 'z') { close(); prev = 'Z'; pc = pq = null; continue; } }
+    else if (cmd === 'M') cmd = 'L'; else if (cmd === 'm') cmd = 'l'; else if (cmd === '' || cmd === 'Z' || cmd === 'z') break;
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase(), ox = rel ? x : 0, oy = rel ? y : 0, before = i;
+    if (C === 'M') { x = ox + num(); y = oy + num(); sx = x; sy = y; start(x, y); pc = pq = null; }
+    else if (C === 'L') { const nx = ox + num(), ny = oy + num(); if (!cur) start(x, y); line(nx, ny); x = nx; y = ny; pc = pq = null; }
+    else if (C === 'H') { const nx = (rel ? x : 0) + num(); if (!cur) start(x, y); line(nx, y); x = nx; pc = pq = null; }
+    else if (C === 'V') { const ny = (rel ? y : 0) + num(); if (!cur) start(x, y); line(x, ny); y = ny; pc = pq = null; }
+    else if (C === 'C') { const a = ox + num(), b = oy + num(), c = ox + num(), dd = oy + num(), px = ox + num(), py = oy + num(); if (!cur) start(x, y); cubic(a, b, c, dd, px, py); pc = [c, dd]; pq = null; x = px; y = py; }
+    else if (C === 'S') { const c = ox + num(), dd = oy + num(), px = ox + num(), py = oy + num(); const c1 = pc && 'CS'.includes(prev) ? [2 * x - pc[0], 2 * y - pc[1]] : [x, y]; if (!cur) start(x, y); cubic(c1[0], c1[1], c, dd, px, py); pc = [c, dd]; pq = null; x = px; y = py; }
+    else if (C === 'Q' || C === 'T') {
+      let q; if (C === 'Q') q = [ox + num(), oy + num()]; else q = pq && 'QT'.includes(prev) ? [2 * x - pq[0], 2 * y - pq[1]] : [x, y];
+      const px = ox + num(), py = oy + num(); if (!cur) start(x, y);
+      cubic(x + 2 / 3 * (q[0] - x), y + 2 / 3 * (q[1] - y), px + 2 / 3 * (q[0] - px), py + 2 / 3 * (q[1] - py), px, py); pq = q; pc = null; x = px; y = py;
+    }
+    else if (C === 'A') {
+      const rx = num(), ry = num(), rot = num(), fa = num(), fs = num(), px = ox + num(), py = oy + num(); if (!cur) start(x, y);
+      arcToBeziers(x, y, rx, ry, rot, fa, fs, px, py).forEach(s => cubic(...s)); pc = pq = null; x = px; y = py;
+    } else break;
+    prev = C; if (i === before) break;
+  }
+  return subs;
+}
+function ellipsePath(cx, cy, rx, ry) { return `M${cx + rx} ${cy}A${rx} ${ry} 0 1 1 ${cx - rx} ${cy}A${rx} ${ry} 0 1 1 ${cx + rx} ${cy}Z`; }
+function shapeToSubpaths(el) {
+  const n = el.localName, g = a => parseFloat(el.getAttribute(a)) || 0;
+  if (n === 'path') return parsePathData(el.getAttribute('d') || '');
+  if (n === 'rect') {
+    const x = g('x'), y = g('y'), w = g('width'), h = g('height'); if (w <= 0 || h <= 0) return [];
+    let rx = el.hasAttribute('rx') ? g('rx') : null, ry = el.hasAttribute('ry') ? g('ry') : null;
+    if (rx === null && ry !== null) rx = ry; if (ry === null && rx !== null) ry = rx;
+    rx = Math.min(rx || 0, w / 2); ry = Math.min(ry || 0, h / 2);
+    if (!rx || !ry) return parsePathData(`M${x} ${y}H${x + w}V${y + h}H${x}Z`);
+    return parsePathData(`M${x + rx} ${y}H${x + w - rx}A${rx} ${ry} 0 0 1 ${x + w} ${y + ry}V${y + h - ry}A${rx} ${ry} 0 0 1 ${x + w - rx} ${y + h}H${x + rx}A${rx} ${ry} 0 0 1 ${x} ${y + h - ry}V${y + ry}A${rx} ${ry} 0 0 1 ${x + rx} ${y}Z`);
+  }
+  if (n === 'circle') return g('r') > 0 ? parsePathData(ellipsePath(g('cx'), g('cy'), g('r'), g('r'))) : [];
+  if (n === 'ellipse') return g('rx') > 0 && g('ry') > 0 ? parsePathData(ellipsePath(g('cx'), g('cy'), g('rx'), g('ry'))) : [];
+  if (n === 'line') return parsePathData(`M${g('x1')} ${g('y1')}L${g('x2')} ${g('y2')}`);
+  if (n === 'polyline' || n === 'polygon') {
+    const p = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number).filter(v => !isNaN(v)); if (p.length < 4) return [];
+    let d = `M${p[0]} ${p[1]}`; for (let k = 2; k + 1 < p.length; k += 2) d += `L${p[k]} ${p[k + 1]}`;
+    return parsePathData(d + (n === 'polygon' ? 'Z' : ''));
+  }
+  return [];
+}
+const R3 = v => round(v, 3);
+function xf(s, m) {
+  const P = ([x, y]) => [R3(m.a * x + m.c * y + m.e), R3(m.b * x + m.d * y + m.f)], V = ([x, y]) => [R3(m.a * x + m.c * y), R3(m.b * x + m.d * y)];
+  return { v: s.v.map(P), i: s.i.map(V), o: s.o.map(V), c: s.c };
+}
+function parseColor(s) {
+  const m = (s || '').match(/rgba?\(([^)]+)\)/); if (!m) return null;
+  const p = m[1].split(/[,\s/]+/).filter(Boolean).map(parseFloat);
+  return { rgb: [round(p[0] / 255, 4), round(p[1] / 255, 4), round(p[2] / 255, 4)], a: p.length > 3 ? p[3] : 1 };
+}
+function paintOf(el, prop, warn) {
+  const cs = getComputedStyle(el), v = cs.getPropertyValue(prop).trim();
+  if (!v || v === 'none') return null;
+  if (v.startsWith('url(')) {
+    warn.add('Gradients are exported as one solid color.');
+    const id = (v.match(/#([^")]+)/) || [])[1], gr = id && el.ownerSVGElement.querySelector('#' + CSS.escape(id)), st = gr && gr.querySelector('stop');
+    if (st) { const scs = getComputedStyle(st), c = parseColor(scs.stopColor), so = parseFloat(scs.stopOpacity); if (c) return { rgb: c.rgb, a: c.a * (isNaN(so) ? 1 : so) }; }
+    return { rgb: [.5, .5, .5], a: 1 };
+  }
+  return parseColor(v);
+}
+const SHAPE_TAGS = new Set(['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon']);
+function collectLeaves(el) {
+  const skip = new Set(['defs', 'clippath', 'mask', 'symbol', 'pattern', 'marker', 'style', 'title', 'desc', 'metadata']), out = [];
+  const walk = n => {
+    const t = n.localName.toLowerCase(); if (skip.has(t)) return;
+    if (SHAPE_TAGS.has(t)) out.push(n); else if (t === 'g' || t === 'a' || t === 'switch') [...n.children].forEach(walk); else if (GRAPHIC.has(t)) out.push(n);
+  };
+  walk(el); return out;
+}
+function accOpacity(el, root) {
+  let o = 1; for (let n = el; n && n !== root; n = n.parentElement) { const v = parseFloat(getComputedStyle(n).opacity); if (!isNaN(v)) o *= v; } return o;
+}
+function keyPoints(c, docDur) {
+  const pts = [], cycles = c.loop ? Math.max(1, Math.ceil((docDur - c.delay) / c.dur - 1e-9)) : 1;
+  for (let n = 0; n < cycles; n++) c.kfs.forEach((k, i) => { if (n > 0 && i === 0) return; pts.push({ time: round(c.delay + (n + k.t) * c.dur, 4), v: k }); });
+  return pts;
+}
+
+/* One model feeds Lottie and After Effects, so they always agree with each other and with the preview. */
+function buildModel() {
+  const warnings = new Set(), { svg, map } = buildDom(), ox = state.doc.ox || 0, oy = state.doc.oy || 0;
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:-99999px;top:0;width:800px;height:800px;visibility:hidden;pointer-events:none';
+  svg.setAttribute('width', state.doc.w); svg.setAttribute('height', state.doc.h); host.appendChild(svg); document.body.appendChild(host);
+  const layers = [];
+  try {
+    const inv = svg.getScreenCTM().inverse();
+    state.layers.forEach(L => {
+      const w = map[L.key], el = w.firstElementChild, bb = w.getBBox();
+      if (!(bb.width > 0 || bb.height > 0)) { warnings.add(`"${L.name}" has no visible shapes, so it was skipped.`); return; }
+      const cx = bb.x + bb.width / 2 - ox, cy = bb.y + bb.height / 2 - oy, shapes = [];
+      collectLeaves(el).forEach(leaf => {
+        const t = leaf.localName.toLowerCase();
+        if (!SHAPE_TAGS.has(t)) { warnings.add(`${t} elements are not exported to Lottie or After Effects (found in "${L.name}"). Convert text to outlines first.`); return; }
+        const cs = getComputedStyle(leaf); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        let subs = shapeToSubpaths(leaf); if (!subs.length) return;
+        const M = inv.multiply(leaf.getScreenCTM()), mat = { a: M.a, b: M.b, c: M.c, d: M.d, e: M.e - ox, f: M.f - oy };
+        subs = subs.map(s => xf(s, mat));
+        const op = accOpacity(leaf, svg), fp = paintOf(leaf, 'fill', warnings), sp = paintOf(leaf, 'stroke', warnings), sc = Math.sqrt(Math.abs(mat.a * mat.d - mat.b * mat.c)), sw = parseFloat(cs.strokeWidth) || 0;
+        const shape = {
+          paths: subs,
+          fill: fp ? { rgb: fp.rgb, opacity: round(fp.a * (parseFloat(cs.fillOpacity) || 0) * op, 4), rule: cs.fillRule === 'evenodd' ? 2 : 1 } : null,
+          stroke: sp && sw > 0 ? { rgb: sp.rgb, opacity: round(sp.a * (parseFloat(cs.strokeOpacity) || 0) * op, 4), width: R3(sw * sc), cap: { butt: 1, round: 2, square: 3 }[cs.strokeLinecap] || 1, join: { miter: 1, round: 2, bevel: 3 }[cs.strokeLinejoin] || 1 } : null
+        };
+        if (shape.fill || shape.stroke) shapes.push(shape);
+      });
+      if (['clip-path', 'mask', 'filter'].some(a => el.hasAttribute(a) || el.querySelector('[' + a + ']'))) warnings.add('Clip paths, masks and filters are not exported to Lottie or After Effects.');
+      const m = activeMotion(L.key); let tracks;
+      if (m) {
+        const c = compile(m), pts = keyPoints(c, state.doc.duration);
+        const tr = (used, fn, stat) => used ? { keys: pts.map(p => ({ t: p.time, v: fn(p.v) })), bez: c.bez } : { static: stat };
+        tracks = {
+          o: tr(c.used.has('o'), v => R3(v.o * 100), 100),
+          p: tr(c.used.has('x') || c.used.has('y'), v => [R3(cx + v.x), R3(cy + v.y)], [R3(cx), R3(cy)]),
+          s: tr(c.used.has('s'), v => [R3(v.s * 100), R3(v.s * 100)], [100, 100]),
+          r: tr(c.used.has('r'), v => R3(v.r), 0)
+        };
+      } else tracks = { o: { static: 100 }, p: { static: [R3(cx), R3(cy)] }, s: { static: [100, 100] }, r: { static: 0 } };
+      layers.push({ name: L.name, key: L.key, cx: R3(cx), cy: R3(cy), shapes, tracks, moving: !!m });
+    });
+  } finally { host.remove(); }
+  return { name: (state.fileName || 'Motioner').replace(/\.[^.]+$/, ''), w: state.doc.w, h: state.doc.h, fps: state.doc.fps, duration: state.doc.duration, layers, warnings: [...warnings] };
+}
+
+/* ---------- Lottie ---------- */
+function lottieProp(tr, fr, dims) {
+  if (!tr.keys) return { a: 0, k: tr.static };
+  const [x1, y1, x2, y2] = tr.bez, rep = v => Array(dims).fill(v);
+  return {
+    a: 1, k: tr.keys.map((k, i) => {
+      const o = { t: round(k.t * fr, 3), s: Array.isArray(k.v) ? k.v : [k.v] };
+      if (i < tr.keys.length - 1) { o.o = { x: rep(x1), y: rep(y1) }; o.i = { x: rep(x2), y: rep(y2) }; }
+      return o;
+    })
+  };
+}
+function buildLottie(model) {
+  const fr = model.fps, op = round(model.duration * fr, 3);
+  const layers = model.layers.map((L, idx) => ({
+    ddd: 0, ind: idx + 1, ty: 4, nm: L.name, sr: 1,
+    ks: { o: lottieProp(L.tracks.o, fr, 1), r: lottieProp(L.tracks.r, fr, 1), p: lottieProp(L.tracks.p, fr, 2), a: { a: 0, k: [L.cx, L.cy] }, s: lottieProp(L.tracks.s, fr, 2) },
+    ao: 0, ip: 0, op, st: 0, bm: 0,
+    shapes: L.shapes.map((S, si) => {
+      const it = S.paths.map(p => ({ ty: 'sh', nm: 'Path', ks: { a: 0, k: { i: p.i, o: p.o, v: p.v, c: p.c } } }));
+      if (S.stroke) it.push({ ty: 'st', nm: 'Stroke', c: { a: 0, k: [...S.stroke.rgb, 1] }, o: { a: 0, k: R3(S.stroke.opacity * 100) }, w: { a: 0, k: S.stroke.width }, lc: S.stroke.cap, lj: S.stroke.join, ml: 4, bm: 0 });
+      if (S.fill) it.push({ ty: 'fl', nm: 'Fill', c: { a: 0, k: [...S.fill.rgb, 1] }, o: { a: 0, k: R3(S.fill.opacity * 100) }, r: S.fill.rule, bm: 0 });
+      it.push({ ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 }, sk: { a: 0, k: 0 }, sa: { a: 0, k: 0 } });
+      return { ty: 'gr', nm: `${L.name} ${si + 1}`, it, np: S.paths.length, cix: 2, bm: 0, ix: si + 1, mn: 'ADBE Vector Group', hd: false };
+    })
+  })).reverse();
+  layers.forEach((l, i) => { l.ind = i + 1; });
+  return { v: '5.7.4', fr, ip: 0, op, w: model.w, h: model.h, nm: model.name, ddd: 0, assets: [], layers };
+}
+
+/* =========================================================
+   Exports, part 2: After Effects, SVG, project, video, checks, dialog
+   ========================================================= */
+const JSX_BODY = `
+  function clampInf(v) { return Math.max(0.1, Math.min(100, v)); }
+  function setTrack(prop, tr) {
+    if (!tr.keys) { prop.setValue(tr.static); return; }
+    var times = [], vals = [], i;
+    for (i = 0; i < tr.keys.length; i++) { times.push(tr.keys[i].t); vals.push(tr.keys[i].v); }
+    prop.setValuesAtTimes(times, vals);
+    var b = tr.bez, linear = (b[0] === b[1] && b[2] === b[3]);
+    for (i = 1; i <= tr.keys.length; i++) {
+      try {
+        if (linear) { prop.setInterpolationTypeAtKey(i, KeyframeInterpolationType.LINEAR, KeyframeInterpolationType.LINEAR); continue; }
+        prop.setInterpolationTypeAtKey(i, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+        var n = prop.isSpatial ? 1 : (prop.value instanceof Array ? prop.value.length : 1);
+        var inI = i > 1 ? clampInf((1 - b[2]) * 100) : 16.67, outI = i < tr.keys.length ? clampInf(b[0] * 100) : 16.67;
+        var ei = [], eo = [], d;
+        for (d = 0; d < n; d++) { ei.push(new KeyframeEase(0, inI)); eo.push(new KeyframeEase(0, outI)); }
+        prop.setTemporalEaseAtKey(i, ei, eo);
+      } catch (e) {}
+    }
+  }
+  function buildLayer(comp, L) {
+    var layer = comp.layers.addShape();
+    layer.name = L.name;
+    var root = layer.property("ADBE Root Vectors Group"), s, p;
+    for (s = 0; s < L.shapes.length; s++) {
+      var S = L.shapes[s];
+      var group = root.addProperty("ADBE Vector Group");
+      group.name = L.name + " " + (s + 1);
+      var items = group.property("ADBE Vectors Group");
+      for (p = 0; p < S.paths.length; p++) {
+        var P = S.paths[p];
+        var pg = items.addProperty("ADBE Vector Shape - Group");
+        var sh = new Shape();
+        sh.vertices = P.v; sh.inTangents = P.i; sh.outTangents = P.o; sh.closed = P.c;
+        pg.property("ADBE Vector Shape").setValue(sh);
+      }
+      if (S.stroke) {
+        var st = items.addProperty("ADBE Vector Graphic - Stroke");
+        st.property("ADBE Vector Stroke Color").setValue(S.stroke.rgb);
+        st.property("ADBE Vector Stroke Width").setValue(S.stroke.width);
+        st.property("ADBE Vector Stroke Opacity").setValue(S.stroke.opacity * 100);
+        st.property("ADBE Vector Stroke Line Cap").setValue(S.stroke.cap);
+        st.property("ADBE Vector Stroke Line Join").setValue(S.stroke.join);
+      }
+      if (S.fill) {
+        var fl = items.addProperty("ADBE Vector Graphic - Fill");
+        fl.property("ADBE Vector Fill Color").setValue(S.fill.rgb);
+        fl.property("ADBE Vector Fill Opacity").setValue(S.fill.opacity * 100);
+        fl.property("ADBE Vector Fill Rule").setValue(S.fill.rule);
+      }
+    }
+    var T = layer.property("ADBE Transform Group");
+    T.property("ADBE Anchor Point").setValue([L.cx, L.cy]);
+    setTrack(T.property("ADBE Position"), L.tracks.p);
+    setTrack(T.property("ADBE Scale"), L.tracks.s);
+    setTrack(T.property("ADBE Rotate Z"), L.tracks.r);
+    setTrack(T.property("ADBE Opacity"), L.tracks.o);
+  }
+  app.beginUndoGroup("Motioner import");
+  try {
+    var comp = app.project.items.addComp(DATA.name, DATA.w, DATA.h, 1, DATA.duration, DATA.fps);
+    comp.openInViewer();
+    for (var i = 0; i < DATA.layers.length; i++) { buildLayer(comp, DATA.layers[i]); }
+  } finally { app.endUndoGroup(); }
+`;
+function buildJsx(model) {
+  const data = { name: model.name, w: model.w, h: model.h, fps: model.fps, duration: model.duration, layers: model.layers.map(L => ({ name: L.name, cx: L.cx, cy: L.cy, tracks: L.tracks, shapes: L.shapes })) };
+  return '// Motioner export for After Effects.\n// In After Effects choose File > Scripts > Run Script File and pick this file.\n(function () {\n  var DATA = ' + JSON.stringify(data) + ';\n' + JSX_BODY + '})();\n';
+}
+
+function cssKeyframes(name, c) {
+  const lines = c.kfs.map((k, i) => {
+    const e = i < c.kfs.length - 1 ? `animation-timing-function:cubic-bezier(${c.bez.join(',')});` : '';
+    return `${round(k.t * 100, 3)}%{opacity:${round(k.o, 4)};transform:translate(${round(k.x, 3)}px,${round(k.y, 3)}px) rotate(${round(k.r, 3)}deg) scale(${round(k.s, 4)});${e}}`;
+  });
+  return `@keyframes ${name}{${lines.join('')}}`;
+}
+function buildAnimatedSvg() {
+  const { svg, map } = buildDom(); let css = '.mw{transform-box:fill-box;transform-origin:center}\n', n = 0;
+  state.layers.forEach(l => {
+    const w = map[l.key], m = activeMotion(l.key); w.setAttribute('data-name', l.name); w.removeAttribute('data-key');
+    if (m) { const c = compile(m), id = `motioner-${n++}`; w.setAttribute('id', id); css += cssKeyframes(id, c) + `#${id}{animation:${id} ${round(c.dur, 3)}s linear ${round(c.delay, 3)}s ${c.loop ? 'infinite' : '1'} both}\n`; }
+  });
+  css += '@media (prefers-reduced-motion: reduce){.mw{animation:none!important}}\n';
+  const style = document.createElementNS(SVGNS, 'style'); style.textContent = css; svg.insertBefore(style, svg.firstChild);
+  svg.setAttribute('width', state.doc.w); svg.setAttribute('height', state.doc.h);
+  const f = postFilter(); if (f) svg.style.filter = f;
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg);
+}
+
+/* ---------- project file ---------- */
+function buildProject() {
+  return {
+    format: 'motioner-project', version: 1, savedAt: new Date().toISOString(),
+    original: { name: state.fileName, svg: state.svgText }, brief: state.brief, doc: state.doc, stagger: state.stagger,
+    layers: state.layers.map(l => ({ key: l.key, name: l.name, animate: l.animate, locked: l.locked })),
+    motions: state.motions, suggestions: state.suggestions, log: state.log.map(e => ({ ...e, at: e.at.toISOString() }))
+  };
+}
+function loadProject(text) {
+  const p = JSON.parse(text);
+  if (p.format !== 'motioner-project' || !p.original?.svg) throw new Error('This file is not a Motioner project.');
+  startDesign(p.original.svg, p.original.name || 'Design.svg', {});
+  state.doc = { ...state.doc, ...p.doc, post: { ...state.doc.post, ...(p.doc?.post || {}) } };
+  (p.layers || []).forEach(x => { const l = layerByKey(x.key); if (l) { l.animate = x.animate; l.locked = x.locked; } });
+  state.motions = p.motions || {}; state.suggestions = p.suggestions || {}; state.brief = p.brief || ''; state.stagger = p.stagger || 0;
+  $('#brief').value = state.brief; $('#stag').value = state.stagger;
+  state.log = (p.log || []).map(e => ({ ...e, at: new Date(e.at) })); addLog('You', `Reopened the project "${p.original.name}".`, 'All motions are editable again.');
+  refreshAll();
+}
+
+/* ---------- preview video (not editable) ---------- */
+function frameImage(t, w, h) {
+  return new Promise((res, rej) => {
+    const { svg, map } = buildDom();
+    state.layers.forEach(l => { const g = map[l.key]; g.style.transformBox = 'fill-box'; g.style.transformOrigin = 'center'; const m = activeMotion(l.key); if (m) applyTo(g, sampleMotion(compile(m), t)); });
+    svg.setAttribute('width', w); svg.setAttribute('height', h);
+    const f = postFilter(); if (f) svg.style.filter = f;
+    const img = new Image(); img.onload = () => res(img); img.onerror = () => rej(new Error('Could not draw a video frame.'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+  });
+}
+async function recordWebm(onProgress) {
+  if (!window.MediaRecorder) throw new Error('This browser cannot record video.');
+  const sc = Math.min(1, 720 / Math.max(state.doc.w, state.doc.h)), cw = Math.round(state.doc.w * sc), ch = Math.round(state.doc.h * sc);
+  const canvas = document.createElement('canvas'); canvas.width = cw; canvas.height = ch; const ctx = canvas.getContext('2d');
+  const stream = canvas.captureStream(0), track = stream.getVideoTracks()[0];
+  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t));
+  if (!mime) throw new Error('This browser cannot record WebM video.');
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4000000 }), chunks = [];
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  const done = new Promise(r => { rec.onstop = r; });
+  rec.start();
+  const frames = Math.max(1, Math.round(state.doc.duration * state.doc.fps));
+  for (let f = 0; f < frames; f++) {
+    const img = await frameImage(f / state.doc.fps, cw, ch);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch); ctx.drawImage(img, 0, 0, cw, ch);
+    if (track.requestFrame) track.requestFrame();
+    onProgress && onProgress(f / frames); await sleep(1000 / state.doc.fps);
+  }
+  rec.stop(); await done;
+  return new Blob(chunks, { type: 'video/webm' });
+}
+
+/* ---------- checks run before every download ---------- */
+function evalLottie(prop, frame) {
+  if (!prop.a) return Array.isArray(prop.k) ? prop.k : [prop.k];
+  const k = prop.k; if (frame <= k[0].t) return k[0].s;
+  for (let i = 0; i < k.length - 1; i++) {
+    const a = k[i], b = k[i + 1];
+    if (frame <= b.t) { const f = bezierEase([a.o.x[0], a.o.y[0], a.i.x[0], a.i.y[0]])((frame - a.t) / (b.t - a.t)); return a.s.map((v, j) => v + (b.s[j] - v) * f); }
+  }
+  return k[k.length - 1].s;
+}
+function checkLottie(lot, text, model) {
+  const out = [], add = (ok, t) => out.push({ ok, t });
+  let parsed; try { parsed = JSON.parse(text); add(true, 'File is valid JSON'); } catch (e) { add(false, 'File is not valid JSON'); return out; }
+  add(['v', 'fr', 'ip', 'op', 'w', 'h', 'layers'].every(k => k in parsed) && parsed.ip < parsed.op, 'Has the fields Lottie players need');
+  add(parsed.layers.length === model.layers.length, `${parsed.layers.length} layers, matching your design`);
+  let order = true, handles = true;
+  parsed.layers.forEach(l => ['o', 'r', 'p', 's'].forEach(p => { const pr = l.ks[p]; if (pr.a) { pr.k.forEach((k, i) => { if (i && k.t <= pr.k[i - 1].t) order = false; if (i < pr.k.length - 1 && !(k.o && k.i && k.o.x[0] >= 0 && k.o.x[0] <= 1 && k.i.x[0] >= 0 && k.i.x[0] <= 1)) handles = false; }); } }));
+  add(order && handles, 'Keyframes are in order with valid easing');
+  let worst = 0; const dur = state.doc.duration;
+  model.layers.forEach((L, idx) => {
+    const m = activeMotion(L.key); if (!m) return;
+    const c = compile(m), ks = parsed.layers[model.layers.length - 1 - idx].ks;
+    [0, c.delay, c.delay + c.dur * .25, c.delay + c.dur * .5, c.delay + c.dur * .83, c.delay + c.dur, dur * .99].forEach(t0 => {
+      const t = Math.min(t0, dur), s = sampleMotion(c, t), f = t * parsed.fr;
+      const exp = { o: s.o * 100, px: L.cx + s.x, py: L.cy + s.y, sx: s.s * 100, r: s.r };
+      const o = evalLottie(ks.o, f)[0], p = evalLottie(ks.p, f), sc = evalLottie(ks.s, f)[0], r = evalLottie(ks.r, f)[0];
+      worst = Math.max(worst, Math.abs(o - exp.o), Math.abs(p[0] - exp.px), Math.abs(p[1] - exp.py), Math.abs(sc - exp.sx), Math.abs(r - exp.r));
+    });
+  });
+  add(worst < 0.5, `Re-read from the file, every motion matches your preview (largest difference ${worst.toFixed(3)})`);
+  return out;
+}
+function checkJsx(text, model) {
+  const out = []; let ok = true; try { new Function(text); } catch (e) { ok = false; }
+  out.push({ ok, t: 'Script has no syntax errors' });
+  out.push({ ok: (text.match(/"name":/g) || []).length >= model.layers.length, t: `Rebuilds ${model.layers.length} layers` });
+  out.push({ ok: text.includes('ADBE Root Vectors Group') && text.includes('setValuesAtTimes'), t: 'Creates shape layers with keyframes' });
+  out.push({ ok: null, t: 'Not run in After Effects here. Easing is approximated, so check the result there.' });
+  return out;
+}
+function checkSvg(text) {
+  const out = [], add = (ok, t) => out.push({ ok, t });
+  const d = new DOMParser().parseFromString(text, 'image/svg+xml');
+  if (d.querySelector('parsererror')) { add(false, 'File is not valid SVG'); return out; }
+  add(true, 'File is valid SVG');
+  const active = state.layers.filter(l => activeMotion(l.key)).length, anim = $$('[id^="motioner-"]', d), css = d.querySelector('style')?.textContent || '';
+  add(anim.length === active && anim.every(a => css.includes('@keyframes ' + a.id)), `${anim.length} animated layers, each with its own keyframes`);
+  const orig = layerElements(state.template), wr = $$('g.mw', d);
+  add(orig.length === wr.length && orig.every((o, i) => wr[i].firstElementChild && wr[i].firstElementChild.isEqualNode(o)), 'Every original layer is unchanged inside the file');
+  return out;
+}
+function checkProject(text) {
+  const out = [], p = JSON.parse(text);
+  out.push({ ok: p.original.svg === state.svgText, t: 'Your original design is stored exactly as you opened it' });
+  out.push({ ok: JSON.stringify(p.motions) === JSON.stringify(state.motions), t: 'Reopening gives back every motion you chose' });
+  return out;
+}
+
+/* ---------- export dialog ---------- */
+let files = {};
+function download(name, mime, data) {
+  const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: mime }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+async function copyText(text, btn) {
+  let ok = false; try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch (e2) { } ta.remove();
+  }
+  const old = btn.innerHTML; btn.textContent = ok ? 'Copied' : 'Copy failed'; setTimeout(() => { btn.innerHTML = old; }, 1600);
+}
+function openExport() {
+  $('#export').hidden = false; $('#exp-preview').innerHTML = '';
+  const model = buildModel(), base = model.name.replace(/[^\w-]+/g, '-') || 'motioner';
+  const lot = buildLottie(model), lotText = JSON.stringify(lot), jsx = buildJsx(model), svg = buildAnimatedSvg(), proj = JSON.stringify(buildProject(), null, 1);
+  files = {
+    lottie: { name: 'Lottie JSON', file: `${base}-lottie.json`, mime: 'application/json', text: lotText, edit: true, view: true, checks: checkLottie(lot, lotText, model), warn: model.warnings, desc: 'Opens in LottieFiles, After Effects (with the Lottie plugin) and web or mobile players. Every motion stays as keyframes you can edit.' },
+    jsx: { name: 'After Effects script', file: `${base}-ae.jsx`, mime: 'text/javascript', text: jsx, edit: true, checks: checkJsx(jsx, model), warn: model.warnings, desc: 'In After Effects choose File, Scripts, Run Script File. It rebuilds your layers with normal keyframes.' },
+    svg: { name: 'Animated SVG', file: `${base}-animated.svg`, mime: 'image/svg+xml', text: svg, edit: true, view: true, checks: checkSvg(svg), warn: [], desc: 'One text file that plays in any browser and stays editable in a code editor. Includes the color changes.' },
+    project: { name: 'Motioner project', file: `${base}.motioner.json`, mime: 'application/json', text: proj, edit: true, checks: checkProject(proj), warn: [], desc: 'Your original design plus every motion and decision. Drop it back in here to keep editing.' },
+    video: { name: 'Preview video (WebM)', file: `${base}-preview.webm`, mime: 'video/webm', blob: null, edit: false, checks: [], warn: [], desc: 'A quick look to share. It cannot be edited afterwards, so keep the project file too.' }
+  };
+  $('#formats').innerHTML = Object.entries(files).map(([id, f]) => {
+    const bad = f.checks.some(c => c.ok === false);
+    return `<div class="fmt" data-id="${id}">
+      <div class="top2"><b>${f.name}</b><span class="pill ${f.edit ? 'edit' : 'warn'}">${f.edit ? 'Editable' : 'Preview only, not editable'}</span></div>
+      <p class="note">${f.desc}</p>
+      ${f.checks.length ? `<div class="checks">${f.checks.map(c => `<span class="${c.ok === true ? 'ok' : c.ok === false ? 'bad' : ''}">${c.ok === true ? '✓' : c.ok === false ? '✗' : '•'} ${esc(c.t)}</span>`).join('')}</div>` : '<div class="checks" data-status></div>'}
+      ${f.warn.length ? `<div class="checks">${f.warn.map(w => `<span class="bad">• ${esc(w)}</span>`).join('')}</div>` : ''}
+      <div class="row">
+        ${id === 'video' ? '<button class="btn small primary" data-act="record" type="button">Record preview</button><button class="btn small" data-act="dl" type="button" disabled>' + ICON.down + 'Download</button>'
+          : `<button class="btn small primary" data-act="dl" type="button" ${bad ? 'disabled' : ''}>${ICON.down}Download</button><button class="btn small" data-act="copy" type="button">${ICON.copy}Copy</button>`}
+        ${f.view ? '<button class="btn small quiet" data-act="view" type="button">See the file play</button>' : ''}
+      </div></div>`;
+  }).join('');
+}
+function loadLottieLib() {
+  return new Promise((res, rej) => {
+    if (window.lottie) return res(window.lottie);
+    const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+    s.onload = () => res(window.lottie); s.onerror = () => rej(new Error('The Lottie player could not be loaded. It needs an internet connection.')); document.head.appendChild(s);
+  });
+}
+function wireExport() {
+  $('#formats').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-act]'), row = e.target.closest('.fmt'); if (!btn || !row) return;
+    const id = row.dataset.id, f = files[id], act = btn.dataset.act, pv = $('#exp-preview');
+    if (act === 'dl') download(f.file, f.mime, f.blob || f.text);
+    else if (act === 'copy') copyText(f.text, btn);
+    else if (act === 'view' && id === 'svg') {
+      const url = URL.createObjectURL(new Blob([f.text], { type: 'image/svg+xml' }));
+      pv.innerHTML = `<p class="note">The exported file, reopened:</p><div class="exp-preview"><img alt="Exported animated SVG" src="${url}" style="width:min(100%,360px)"></div>`;
+    } else if (act === 'view' && id === 'lottie') {
+      pv.innerHTML = '<p class="note">The exported Lottie file, played by the standard Lottie player:</p><div class="exp-preview"><div id="lot" style="width:min(100%,360px);aspect-ratio:' + state.doc.w + '/' + state.doc.h + '"></div></div>';
+      try { const L = await loadLottieLib(); L.loadAnimation({ container: $('#lot'), renderer: 'svg', loop: true, autoplay: true, animationData: JSON.parse(f.text) }); }
+      catch (err) { pv.innerHTML = `<p class="note">${esc(err.message)}</p>`; }
+    } else if (act === 'record') {
+      const st = $('[data-status]', row); btn.disabled = true;
+      try {
+        const blob = await recordWebm(p => { st.textContent = `Recording… ${Math.round(p * 100)}%`; });
+        f.blob = blob; st.innerHTML = blob.size > 0 ? '<span class="ok">✓ Video recorded. This is a preview, not an editable file.</span>' : '<span class="bad">✗ The recording came out empty.</span>';
+        $('[data-act=dl]', row).disabled = !(blob.size > 0);
+        pv.innerHTML = `<div class="exp-preview"><video src="${URL.createObjectURL(blob)}" controls loop muted autoplay playsinline></video></div>`;
+      } catch (err) { st.innerHTML = `<span class="bad">✗ ${esc(err.message)}</span>`; }
+      btn.disabled = false;
+    }
+  });
+}
+
+wireExport();
+init();
+
+</script>
+</body>
+</html>
