@@ -14,7 +14,7 @@
   --bg:#EEF0F5; --bg-2:#E1E4EC; --surface:#FFFFFF; --surface-2:#E6E9F0; --ink:#161616; --ink-2:#5B6072; --line:#D3D7E1;
   --side:#2A2A2A; --tile:#111111; --tile-ink:#FFFFFF; --tile-muted:#9C9CA3;
   --accent:#FF6B4A; --accent-ink:#161616;
-  --c-lilac:#D9C5F9; --c-coral:#FF6F4D; --c-green:#00A05B; --card-ink:#161616;
+  --c-lilac:#D9C5F9; --c-coral:#FF6F4D; --c-green:#00A05B; --c-blue:#AFCBF4; --c-yellow:#F4C94A; --card-ink:#161616;
   --ok:#0B7A47; --warn:#9A4A00;
   --shadow:0 1px 2px rgba(22,22,22,.06),0 12px 32px rgba(22,28,45,.09);
   --font-display:"Urbanist",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -50,6 +50,11 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 svg.i.solid{fill:currentColor;stroke:none}
 .hint{color:var(--ink-2);font-size:13px}
 .empty{padding:16px;border:1px dashed var(--line);border-radius:18px;color:var(--ink-2);font-size:13px}
+
+/* Simple mode is the default: fewer words, bigger targets, the engine underneath is unchanged.
+   Advanced mode reveals the full control set. Body carries which one is active. */
+body.ui-simple .adv-only{display:none!important}
+body.ui-adv .simple-only{display:none!important}
 
 /* shell */
 .shell{display:grid;grid-template-columns:minmax(0,1fr);min-height:100vh}
@@ -150,8 +155,11 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
 .canvas{position:relative;width:min(100%,560px,calc(56vh * var(--ar,1)));box-shadow:0 14px 40px rgba(22,28,45,.2);border-radius:6px;overflow:hidden}
 .canvas svg{display:block;width:100%;height:100%}
 .selbox{position:absolute;pointer-events:none;border:2px dashed var(--accent);border-radius:4px;display:none}
+.hoverbox{position:absolute;pointer-events:none;border:1.5px solid rgba(22,22,22,.35);border-radius:4px;display:none;z-index:2}
+.hoverbox span{position:absolute;left:0;bottom:100%;margin-bottom:4px;background:var(--ink);color:var(--bg);font-size:11.5px;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .mw{transform-box:fill-box;transform-origin:center;cursor:pointer}
 .stage.orig .mw{cursor:default}
+.stage-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:6px 14px;border-radius:99px;pointer-events:none;white-space:nowrap}
 
 .timeline{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);padding:12px 16px;position:relative;touch-action:pan-y}
 .tl-body{position:relative}
@@ -195,6 +203,25 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
 .opt .acts{display:flex;gap:14px;flex-wrap:wrap}
 .lnk{background:none;border:0;padding:2px 0;text-decoration:underline;text-underline-offset:3px;font-size:13px;color:inherit}
 
+/* simple mode: one big guided panel instead of separate sections */
+.guide{display:flex;flex-direction:column;gap:16px}
+.style-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px}
+.simple-card{border:0;border-radius:18px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--card-ink);min-width:0}
+.simple-card.c0{background:var(--c-lilac)}.simple-card.c1{background:var(--c-coral)}.simple-card.c2{background:var(--c-green)}.simple-card.c3{background:var(--c-blue)}.simple-card.c4{background:var(--c-yellow)}
+.simple-card:hover{filter:brightness(1.04)}
+.simple-card.used{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
+.simple-card .scv{width:100%;display:grid;place-items:center}
+.simple-card .mini{width:min(100%,120px,calc(92px * var(--ar,1)));aspect-ratio:var(--ar,1);border-radius:9px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.simple-card .mini svg{display:block;width:100%;height:100%}
+.simple-card .snm{font-weight:600;font-size:13.5px}
+.tune{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
+.tunerow{display:flex;flex-direction:column;gap:8px}
+.tunelabel{font-size:13px;color:var(--ink-2);font-weight:500}
+.pillgroup{display:flex;gap:8px;flex-wrap:wrap}
+.pillgroup button{border:1.5px solid var(--line);background:transparent;border-radius:99px;padding:9px 18px;min-height:40px;font-weight:500;font-size:13.5px}
+.pillgroup button:hover{border-color:var(--ink)}
+.pillgroup button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
 /* log */
 .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;max-height:340px;overflow:auto}
 .log li{display:flex;flex-direction:column;gap:1px;padding-left:12px;border-left:2px solid var(--line);font-size:13px}
@@ -221,7 +248,7 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
 @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
-<body>
+<body class="ui-simple">
 <div class="shell">
   <aside class="side">
     <div>
@@ -238,9 +265,9 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
       </div>
       <input type="file" id="file" accept=".svg,.json,image/svg+xml,application/json" hidden>
     </div>
-    <div class="side-h"><h2>Layers</h2><span class="hint" style="color:var(--tile-muted)">Pick one to move it</span></div>
+    <div class="side-h"><h2>Parts of your design</h2><span class="hint" style="color:var(--tile-muted)">Pick one</span></div>
     <div class="tiles" id="layers"></div>
-    <div class="stagger">
+    <div class="stagger adv-only">
       <label for="stag">Stagger</label><input type="number" id="stag" min="0" max="1" step="0.05" value="0"><span>s apart</span>
       <button class="btn small" id="stag-apply" type="button">Apply to motions</button>
     </div>
@@ -248,36 +275,38 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
 
   <main class="main">
     <header class="topnav">
-      <div class="pillnav" role="group" aria-label="View">
-        <button type="button" id="mode-anim" aria-pressed="true">Animated</button>
-        <button type="button" id="mode-orig" aria-pressed="false">Original</button>
+      <div class="pillnav" role="group" aria-label="Mode">
+        <button type="button" id="ui-simple" aria-pressed="true">Simple</button>
+        <button type="button" id="ui-adv" aria-pressed="false">Advanced</button>
       </div>
       <div class="pillnav">
         <button id="undo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo</button>
         <button id="redo" type="button" disabled><svg class="i" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>Redo</button>
-        <button class="go" id="export-open" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v10m-4-4 4 4 4-4M5 19h14"/></svg>Export</button>
+        <button class="go" id="export-open" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M12 4v10m-4-4 4 4 4-4M5 19h14"/></svg><span id="export-label">Get your animation</span></button>
       </div>
     </header>
 
     <section class="hero">
-      <h1 id="hero-title">Your design</h1>
+      <h1 id="hero-title">Pick a part</h1>
       <div class="hero-row">
-        <span class="pillbadge" id="hero-badge">No motion yet</span>
+        <span class="pillbadge" id="hero-badge">Step 1 of 3</span>
         <label class="pillbtn" for="hero-animate"><input type="checkbox" id="hero-animate"> Let it move</label>
-        <button class="pillbtn" id="hero-lock" type="button" aria-pressed="false"></button>
+        <button class="pillbtn adv-only" id="hero-lock" type="button" aria-pressed="false"></button>
       </div>
       <p class="sub" id="hero-sub"></p>
     </section>
 
-    <section class="briefbox">
-      <label class="sr-only" for="brief">Describe how things should move</label>
-      <div class="briefrow">
-        <textarea id="brief" placeholder="Describe the motion, for example: the steam floats up slowly and loops"></textarea>
-        <button class="btn primary" id="suggest" type="button">Suggest motion</button>
-      </div>
-      <div class="chips" id="chips"></div>
-      <div id="ask"></div>
-    </section>
+    <div id="brief-home-adv">
+      <section class="briefbox" id="briefbox">
+        <label class="sr-only" for="brief">Describe how things should move</label>
+        <div class="briefrow">
+          <textarea id="brief" placeholder="Describe the motion, for example: the steam floats up slowly and loops"></textarea>
+          <button class="btn primary" id="suggest" type="button">Suggest motion</button>
+        </div>
+        <div class="chips" id="chips"></div>
+        <div id="ask"></div>
+      </section>
+    </div>
 
     <section class="work">
       <div class="stagecard">
@@ -287,12 +316,23 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
             <span class="ringicon"></span>
           </button>
           <span class="time" id="time">0.00 / 3.00 s</span>
+          <div class="pillnav" role="group" aria-label="Compare" style="margin-left:auto">
+            <button type="button" id="mode-orig" aria-pressed="false">Original</button>
+            <button type="button" id="mode-anim" aria-pressed="true">Animated</button>
+          </div>
         </div>
-        <div class="stage" id="stage"><div class="canvas" id="canvas"><div class="selbox" id="selbox"></div></div></div>
+        <div class="stage" id="stage">
+          <div class="canvas" id="canvas"><div class="selbox" id="selbox"></div><div class="hoverbox" id="hoverbox"><span></span></div></div>
+          <div class="stage-hint simple-only" id="stage-hint">Click any part of the picture</div>
+        </div>
       </div>
       <div class="stack">
-        <div class="timeline" id="timeline" aria-label="Timeline"></div>
-        <div class="panel">
+        <div class="guide simple-only" id="simple">
+          <div id="simple-dyn"></div>
+          <details class="describe" id="describe"><summary>Prefer typing? Describe it in your own words</summary><div id="brief-home-simple"></div></details>
+        </div>
+        <div class="timeline adv-only" id="timeline" aria-label="Timeline"></div>
+        <div class="panel adv-only" id="docpanel">
           <h2>Length and color</h2>
           <div class="fields">
             <div class="field"><label for="doc-dur">Length (seconds)</label><input type="number" id="doc-dur" min="0.5" max="30" step="0.5"></div>
@@ -309,12 +349,12 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
       </div>
     </section>
 
-    <section class="opts-wrap">
+    <section class="opts-wrap adv-only">
       <h2 id="opt-title">Ways to move</h2>
       <div class="options" id="options"></div>
     </section>
 
-    <section class="lower">
+    <section class="lower adv-only">
       <div class="opts-wrap"><h2>Fine-tune</h2><div id="controls"></div></div>
       <div class="opts-wrap"><h2>Decisions</h2><div class="panel"><ol class="log" id="log"></ol></div></div>
     </section>
@@ -323,8 +363,8 @@ textarea{flex:1 1 280px;min-height:68px;resize:vertical;padding:14px 18px;border
 
 <div class="overlay" id="export" hidden role="dialog" aria-modal="true" aria-labelledby="exp-title">
   <div class="dialog">
-    <div class="row" style="justify-content:space-between"><h2 id="exp-title">Export</h2><button class="btn small" id="export-close" type="button">Close</button></div>
-    <p class="note">Each file is checked before you download it. Files marked Editable keep every motion as data you can change in other software.</p>
+    <div class="row" style="justify-content:space-between"><h2 id="exp-title">Get your animation</h2><button class="btn small" id="export-close" type="button">Close</button></div>
+    <p class="note">Pick the kind of file you need. Each one is checked before you download it.</p>
     <div id="formats" class="options"></div>
     <div id="exp-preview"></div>
   </div>
@@ -517,7 +557,9 @@ function compile(m) {
 function sampleMotion(c, time) {
   const local = time - c.delay, k = c.kfs;
   let p;
-  if (local <= 0) p = 0; else if (c.loop) p = (local % c.dur) / c.dur; else p = Math.min(local / c.dur, 1);
+  if (local <= 0) p = 0;
+  else if (c.loop) { const m = local % c.dur; p = (m === 0 ? c.dur : m) / c.dur; } // an exact cycle boundary is the end of that cycle, matching the exported keyframes (which drop the duplicate start point)
+  else p = Math.min(local / c.dur, 1);
   if (p <= 0) return k[0];
   if (p >= 1) return k[k.length - 1];
   let i = 0; while (i < k.length - 2 && p >= k[i + 1].t) i++;
@@ -611,6 +653,17 @@ function buildMotion(type, approach, it, label) {
     loop: it.loop === null ? T.loop : it.loop, easing: ease, bez: [...EASINGS[ease].b], source: 'suggestion',
     recommended: !it.ambiguous && approach === (it.tone || 'balanced')
   };
+}
+/* Simple mode: one click picks a type directly, always at the 'balanced' approach, no interpretation needed. */
+function styleMotion(type) { return buildMotion(type, 'balanced', { direction: null, loop: null }); }
+function useSimpleStyle(type) {
+  const key = state.sel, l = layerByKey(key);
+  if (!l || l.locked) return;
+  mutate('Chose a style', () => {
+    const m = styleMotion(type);
+    state.motions[key] = { ...m, id: uid(), source: 'suggestion' };
+    addLog('You', `Gave "${l.name}" a ${TYPES[type].label.toLowerCase()} motion.`, 'Chosen from the style gallery. Adjust speed, size, direction or repeat below.');
+  });
 }
 function makeApproaches(it) {
   if (it.ambiguous) {
@@ -741,6 +794,7 @@ function fitLength() {
    ========================================================= */
 let stage = { map: null };
 let previews = [];
+const isSimple = () => document.body.classList.contains('ui-simple');
 const EXAMPLES = ['Steam floats up slowly and loops', 'Everything pops in, one by one', 'Make it feel alive', 'The cup bounces'];
 
 function mountStage() {
@@ -796,10 +850,50 @@ function renderLayers() {
 function renderHero() {
   const l = layerByKey(state.sel), m = l && state.motions[l.key];
   $('#hero-title').textContent = l ? l.name : 'Your design';
-  $('#hero-badge').textContent = !l ? 'No design yet' : !l.animate ? 'Still' : m ? `${m.typeLabel} · ${m.source === 'suggestion' ? m.label : 'edited'}` : 'No motion yet';
-  $('#hero-sub').textContent = !l ? 'Open an SVG to start.' : !l.animate ? 'This layer stays still. Switch on "Let it move" to animate it.' : m ? describe(m) : 'Describe the motion below and press Suggest motion. You will get three ways to move this layer, and nothing changes until you choose one.';
+  if (!l) { $('#hero-badge').textContent = 'No design yet'; $('#hero-sub').textContent = 'Open an SVG on the left, or try the example.'; }
+  else if (!l.animate) { $('#hero-badge').textContent = 'Set to stay still'; $('#hero-sub').textContent = 'Switch on "Let it move" above to give this part motion.'; }
+  else if (!m) { $('#hero-badge').textContent = isSimple() ? 'Step 1 of 2 · Choose a style' : 'No motion yet'; $('#hero-sub').textContent = isSimple() ? 'Pick one of the moving previews below, or describe it in your own words.' : 'Describe the motion below and press Suggest motion. You will get three ways to move this layer, and nothing changes until you choose one.'; }
+  else { $('#hero-badge').textContent = isSimple() ? 'Step 2 of 2 · Adjust or finish' : `${m.typeLabel} · ${m.source === 'suggestion' ? m.label : 'edited'}`; $('#hero-sub').textContent = describe(m); }
   const a = $('#hero-animate'); a.checked = !!(l && l.animate); a.disabled = !l;
   const k = $('#hero-lock'); k.setAttribute('aria-pressed', !!(l && l.locked)); k.innerHTML = (l && l.locked ? ICON.lock : ICON.unlock) + (l && l.locked ? 'Locked' : 'Lock'); k.disabled = !l;
+}
+function renderSimple() {
+  const host = $('#simple-dyn'), l = layerByKey(state.sel);
+  previews = [];
+  if (!l) { host.innerHTML = '<div class="empty">Load a design, then tap a part of the picture or a tile on the left.</div>'; return; }
+  if (!l.animate) { host.innerHTML = `<div class="empty">"${esc(l.name)}" is set to stay still. Switch on "Let it move" above to give it motion.</div>`; return; }
+  const cur = state.motions[l.key];
+  let html = `<div class="style-grid" id="style-grid">` + Object.keys(TYPES).map((t, i) => {
+    const used = cur && cur.type === t;
+    return `<button class="simple-card c${i % 5} ${used ? 'used' : ''}" type="button" data-type="${t}" aria-pressed="${used}">
+      <span class="scv"><span class="mini" style="--ar:${state.doc.w / state.doc.h}"></span></span>
+      <span class="snm">${esc(TYPES[t].label)}</span></button>`;
+  }).join('') + `</div>`;
+  if (cur) html += renderTuneHtml(cur);
+  host.innerHTML = html;
+  $$('.simple-card', host).forEach(card => {
+    const t = card.dataset.type, d = buildDom(), mini = $('.mini', card);
+    Object.keys(d.map).forEach(k => { if (k !== l.key) d.map[k].style.opacity = '.3'; });
+    mini.appendChild(d.svg);
+    previews.push({ map: d.map, key: l.key, motion: cur && cur.type === t ? cur : styleMotion(t) });
+  });
+}
+const nearest = (v, opts) => opts.reduce((b, o) => Math.abs(o - v) < Math.abs(b - v) ? o : b);
+function renderTuneHtml(cur) {
+  const T = TYPES[cur.type], speed = nearest(cur.speed, [0.6, 1, 1.6]), inten = nearest(cur.intensity, [25, 55, 90]);
+  const pill = (f, v, label, pressed) => `<button type="button" data-v="${v}" aria-pressed="${pressed}">${esc(label)}</button>`;
+  return `<div class="tune">
+    <h3 class="tune-h">Adjust</h3>
+    <div class="tunerow"><span class="tunelabel">Speed</span><div class="pillgroup" data-f="speed">
+      ${pill('speed', 0.6, 'Slow', speed === 0.6)}${pill('speed', 1, 'Normal', speed === 1)}${pill('speed', 1.6, 'Fast', speed === 1.6)}</div></div>
+    ${cur.type !== 'fade' ? `<div class="tunerow"><span class="tunelabel">Size of motion</span><div class="pillgroup" data-f="intensity">
+      ${pill('intensity', 25, 'Small', inten === 25)}${pill('intensity', 55, 'Medium', inten === 55)}${pill('intensity', 90, 'Large', inten === 90)}</div></div>` : ''}
+    ${T.dirs.length ? `<div class="tunerow"><span class="tunelabel">Direction</span><div class="pillgroup" data-f="direction">
+      ${T.dirs.map(d => pill('direction', d, DIR_LABEL[d], d === cur.direction)).join('')}</div></div>` : ''}
+    <div class="tunerow"><span class="tunelabel">Repeat</span><div class="pillgroup" data-f="loop">
+      ${pill('loop', 'false', 'Once', !cur.loop)}${pill('loop', 'true', 'Keep looping', !!cur.loop)}</div></div>
+    <button class="lnk" type="button" id="simple-remove">Remove this motion</button>
+  </div>`;
 }
 function renderAsk() {
   const q = state.question, host = $('#ask');
@@ -897,7 +991,9 @@ function renderTimeline() {
   host.innerHTML = `<div class="tl-body"><div class="trow ruler"><span></span><div class="track">${ticks}</div></div>${rows}<div class="playhead-wrap"><div class="playhead" id="playhead"></div></div></div>`;
 }
 function refreshAll() {
-  renderTop(); renderLayers(); renderHero(); renderAsk(); renderOptions(); renderControls(); renderTimeline(); renderDocPost(); renderLog(); renderPlay();
+  renderTop(); renderLayers(); renderHero(); renderAsk();
+  if (isSimple()) renderSimple(); else { renderOptions(); renderControls(); }
+  renderTimeline(); renderDocPost(); renderLog(); renderPlay();
 }
 
 /* ---------- playback ---------- */
@@ -925,7 +1021,21 @@ function tick(now) {
    Events and start-up
    ========================================================= */
 function select(key) {
-  state.sel = key; renderLayers(); renderHero(); renderOptions(); renderControls(); renderTimeline();
+  state.sel = key; renderLayers(); renderHero();
+  if (isSimple()) renderSimple(); else { renderOptions(); renderControls(); }
+  renderTimeline();
+}
+function relocateBrief() {
+  const box = $('#briefbox'), target = isSimple() ? $('#brief-home-simple') : $('#brief-home-adv');
+  if (target && box && box.parentElement !== target) target.appendChild(box);
+}
+function setMode(mode) {
+  document.body.classList.toggle('ui-simple', mode === 'simple');
+  document.body.classList.toggle('ui-adv', mode === 'adv');
+  $('#ui-simple').setAttribute('aria-pressed', mode === 'simple');
+  $('#ui-adv').setAttribute('aria-pressed', mode === 'adv');
+  try { localStorage.setItem('motioner-mode', mode); } catch (e) { /* per-viewer convenience only */ }
+  relocateBrief(); refreshAll();
 }
 function startDesign(text, name, opts = {}) {
   loadDesign(text, name, opts);
@@ -949,6 +1059,9 @@ function setTimeFromX(x) {
   state.time = clamp((x - r.left) / r.width, 0, 1) * state.doc.duration; state.playing = false; renderPlay();
 }
 function wire() {
+  // mode
+  $('#ui-simple').onclick = () => setMode('simple');
+  $('#ui-adv').onclick = () => setMode('adv');
   // top bar
   $('#undo').onclick = undo; $('#redo').onclick = redo;
   $('#play').onclick = () => { state.playing = !state.playing; renderPlay(); };
@@ -978,6 +1091,27 @@ function wire() {
   $('#stag-apply').onclick = applyStagger;
   // stage
   $('#canvas').addEventListener('click', e => { const g = e.target.closest('.mw'); if (g && state.mode === 'animated') select(g.dataset.key); });
+  const stageEl = $('#stage'), hb = $('#hoverbox');
+  stageEl.addEventListener('pointermove', e => {
+    const g = state.mode === 'animated' ? e.target.closest('.mw') : null;
+    if (!g) { hb.style.display = 'none'; return; }
+    const r = g.getBoundingClientRect(), c = $('#canvas').getBoundingClientRect();
+    if (r.width <= 0) { hb.style.display = 'none'; return; }
+    hb.style.display = 'block';
+    hb.style.left = (r.left - c.left - 2) + 'px'; hb.style.top = (r.top - c.top - 2) + 'px';
+    hb.style.width = (r.width + 4) + 'px'; hb.style.height = (r.height + 4) + 'px';
+    $('span', hb).textContent = layerByKey(g.dataset.key)?.name || '';
+  });
+  stageEl.addEventListener('pointerleave', () => { hb.style.display = 'none'; });
+  // simple mode: style gallery and plain-word tune panel
+  $('#simple-dyn').addEventListener('click', e => {
+    const card = e.target.closest('.simple-card'); if (card) { useSimpleStyle(card.dataset.type); return; }
+    if (e.target.id === 'simple-remove') { removeMotion(state.sel); return; }
+    const btn = e.target.closest('.pillgroup button'); if (!btn) return;
+    const f = btn.closest('.pillgroup').dataset.f;
+    let v = btn.dataset.v; if (v === 'true') v = true; else if (v === 'false') v = false; else v = +v;
+    editMotion(f, v, true);
+  });
   // options
   $('#options').addEventListener('click', e => {
     const card = e.target.closest('.opt'), act = e.target.closest('[data-act]')?.dataset.act; if (!card || !act) return;
@@ -1039,6 +1173,12 @@ function wire() {
 
 function init() {
   wire();
+  let savedMode = 'simple'; try { savedMode = localStorage.getItem('motioner-mode') === 'adv' ? 'adv' : 'simple'; } catch (e) { /* per-viewer convenience only */ }
+  document.body.classList.toggle('ui-simple', savedMode === 'simple');
+  document.body.classList.toggle('ui-adv', savedMode === 'adv');
+  $('#ui-simple').setAttribute('aria-pressed', savedMode === 'simple');
+  $('#ui-adv').setAttribute('aria-pressed', savedMode === 'adv');
+  relocateBrief();
   $('#brief').value = EXAMPLES[0];
   startDesign(SAMPLE_SVG, 'Morning cup.svg', { example: true });
   runBrief();
@@ -1172,9 +1312,19 @@ function collectLeaves(el) {
 function accOpacity(el, root) {
   let o = 1; for (let n = el; n && n !== root; n = n.parentElement) { const v = parseFloat(getComputedStyle(n).opacity); if (!isNaN(v)) o *= v; } return o;
 }
+/* A cycle's start point is dropped only when it exactly repeats the value the previous cycle just ended on
+   (float, bounce, pulse, wiggle). A motion that starts and ends on different values (fade, slide, pop, spin)
+   needs both points every cycle, or the export freezes at the end state after the first repeat. */
+function sameValue(a, b) { return a.o === b.o && a.x === b.x && a.y === b.y && a.s === b.s && a.r === b.r; }
 function keyPoints(c, docDur) {
   const pts = [], cycles = c.loop ? Math.max(1, Math.ceil((docDur - c.delay) / c.dur - 1e-9)) : 1;
-  for (let n = 0; n < cycles; n++) c.kfs.forEach((k, i) => { if (n > 0 && i === 0) return; pts.push({ time: round(c.delay + (n + k.t) * c.dur, 4), v: k }); });
+  const continuous = sameValue(c.kfs[0], c.kfs[c.kfs.length - 1]);
+  const eps = Math.min(0.001, c.dur * 0.01); // a hair later than the previous cycle's end, never equal to it: duplicate-time keyframes are invalid in Lottie and After Effects
+  for (let n = 0; n < cycles; n++) c.kfs.forEach((k, i) => {
+    if (n > 0 && i === 0 && continuous) return;
+    const bump = (n > 0 && i === 0) ? eps : 0;
+    pts.push({ time: round(c.delay + (n + k.t) * c.dur + bump, 4), v: k });
+  });
   return pts;
 }
 

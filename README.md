@@ -102,6 +102,6 @@ Done when:  you know it works because it creates a (always changeable) file with
 
 What it does today:
 - Opens an SVG (Illustrator, Photoshop and Figma files: export as SVG first).
-- Reads your description and offers 3 approaches per layer. Nothing is applied until you accept it.
-- Fine-tune controls, timeline with draggable delays, undo and redo, and a decision log (what changed, why, who decided).
+- Two modes, switched with a pill at the top: **Simple** (default) — click a part, tap one of 8 moving style cards, adjust with 4 plain-word buttons (Speed, Size of motion, Direction, Repeat). **Advanced** — the full control set: type a description for 3 suggested approaches per layer, fine-tune sliders, timeline with draggable delays, stagger, lock, length/fps/color. Both modes share the same underlying motion engine and the same Export dialog.
+- Undo/redo and a decision log (what changed, why, who decided) work in both modes.
 - Exports: Lottie JSON, After Effects script (.jsx), animated SVG, a `.motioner.json` project file you can reopen, and a preview video (WebM, not editable). Each file is checked before download.
